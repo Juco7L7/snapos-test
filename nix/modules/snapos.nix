@@ -71,6 +71,9 @@ in {
   config = {
     system.nixos.distroName = "SnapOS";
     networking.hostName = mkDefault "snapos";
+    # Wi-Fi and Ethernet on every desktop (only Budgie's module turns this on
+    # by itself; the installer keeps the Wi-Fi networks in NetworkManager)
+    networking.networkmanager.enable = true;
 
     # os-release names the SnapOS release, not the NixOS one: fastfetch and
     # `snapos version` show "SnapOS 2.0", and updates compare this number.

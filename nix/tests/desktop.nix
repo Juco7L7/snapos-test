@@ -45,6 +45,7 @@ let
       testScript = ''
         machine.start()
         machine.wait_for_unit("multi-user.target")
+        machine.wait_for_unit("NetworkManager.service")
         machine.sleep(30)
         machine.execute("cat /proc/cmdline > /tmp/cmdline.txt; uname -r > /tmp/kernel.txt; ps -eo user,comm,args > /tmp/ps.txt")
         machine.execute("systemctl status display-manager --no-pager > /tmp/dm-status.txt 2>&1")

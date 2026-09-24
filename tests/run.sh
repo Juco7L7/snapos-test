@@ -539,6 +539,7 @@ check "Hyprland has a bar, a launcher, notifications and a wallpaper" bash -c "g
 check "Plasma and Xfce get the SnapOS look" bash -c "grep -q 'AccentColor=226,42,28' '$D_NIX' && grep -q 'ThemeName' '$D_NIX' && grep -q 'plasma-apply-wallpaperimage' '$D_NIX' && grep -q 'xfconf-query' '$D_NIX'"
 check "the light appearance reaches every desktop" bash -c "grep -q 'BreezeLight' '$D_NIX' && grep -q 'org.kde.breeze.desktop' '$D_NIX' && grep -q 'if light then \"ece9e5\"' '$D_NIX'"
 check "a VM test exists for each desktop in both appearances" bash -c "for d in desktop plasma xfce hyprland; do grep -qE \"^  \$d = \\w+ \\\"dark\\\";\" '$ROOT/nix/tests/desktop.nix' && grep -qE \"^  \$d-light = \\w+ \\\"light\\\";\" '$ROOT/nix/tests/desktop.nix' || exit 1; done"
+check "NetworkManager is on for every desktop" grep -q 'networking.networkmanager.enable = true;' "$ROOT/nix/modules/snapos.nix"
 check "SnapHelper's files are linked on every desktop" grep -q 'environment.pathsToLink = \[ "/share/snapos" \]' "$ROOT/nix/modules/snapos.nix"
 check "CI runs the four desktops in both appearances" grep -q 'desktop: \[ desktop, desktop-light, plasma, plasma-light, xfce, xfce-light, hyprland, hyprland-light \]' "$ROOT/.github/workflows/desktop-test.yml"
 check "both wallpapers exist" bash -c "[ -f '$ROOT/branding/wallpapers/snapos-default.jpeg' ] && [ -f '$ROOT/branding/wallpapers/snapos-light.jpeg' ]"
