@@ -232,7 +232,9 @@ in {
     boot.loader.grub.configurationLimit = 10;
 
     services.xserver.displayManager.lightdm.background = loginBackground;
+    # the same login screen on every desktop (only Budgie turns it on by itself)
     services.xserver.displayManager.lightdm.greeters.slick = {
+      enable = true;
       theme = { name = gtkTheme; package = gtkPackage; };
       iconTheme = { name = iconName; package = redIcons; };
     };

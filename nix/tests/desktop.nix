@@ -1,13 +1,13 @@
 { pkgs }:
 
-# One VM per desktop: the system boots, a user is logged in automatically,
+# One VM per desktop and appearance: the system boots to the login screen,
 # the desktop's own processes are up, the SnapOS look and programs are in
 # place, and the update guard approves a system once someone has logged in.
 let
   # The login screen is photographed and the password typed, as a person
   # would do; then the desktop is photographed.
   loginScreen = ''
-        machine.wait_until_succeeds("pgrep -f slick-greeter", timeout=300)
+        machine.wait_until_succeeds("pgrep -f '[s]lick-greeter'", timeout=300)
         machine.sleep(20)
         machine.screenshot("01-login")
         machine.send_chars("tester\n")
@@ -51,22 +51,27 @@ let
         machine.screenshot("01-state")
         machine.wait_for_unit("display-manager.service")
         ${login}
-        for p in ${builtins.toJSON processes}:
-            machine.wait_until_succeeds("pgrep -u tester -f " + p, timeout=300)
-        machine.sleep(30)
-        machine.screenshot("02-desktop")
-        machine.execute("(echo 'variant: ${name}'; free -m; echo; echo running services: $(systemctl list-units --type=service --state=running --no-legend | wc -l); echo processes: $(ps -e | wc -l)) > /tmp/metrics.txt")
-        machine.copy_from_vm("/tmp/metrics.txt")
-        machine.succeed("grep -q ${appearance} /etc/snapos/appearance")
-        machine.succeed("test -f /etc/xdg/autostart/snaphelper.desktop")
-        machine.succeed("test -s /run/current-system/sw/share/snapos/helper/snappy-declares.gif")
-        machine.succeed("snapos help")
-        machine.succeed("snapguard status")
-        machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
-        ${extra}
-        machine.screenshot("09-final")
-        machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log /tmp/*.log /tmp/hypr-*.txt 2>/dev/null; true")
-        machine.copy_from_vm("/tmp/xlogs.tgz")
+        try:
+            for p in ${builtins.toJSON processes}:
+                machine.wait_until_succeeds("pgrep -u tester -f " + p, timeout=300)
+            machine.sleep(30)
+            machine.screenshot("02-desktop")
+            machine.execute("(echo 'variant: ${name}'; free -m; echo; echo running services: $(systemctl list-units --type=service --state=running --no-legend | wc -l); echo processes: $(ps -e | wc -l)) > /tmp/metrics.txt")
+            machine.copy_from_vm("/tmp/metrics.txt")
+            machine.succeed("grep -q ${appearance} /etc/snapos/appearance")
+            machine.succeed("test -f /etc/xdg/autostart/snaphelper.desktop")
+            machine.succeed("test -s /run/current-system/sw/share/snapos/helper/snappy-declares.gif")
+            machine.succeed("snapos help")
+            machine.succeed("snapguard status")
+            machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
+            ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
+            machine.screenshot("09-final")
+        finally:
+            machine.screenshot("08-last")
+            machine.execute("journalctl -b --no-pager > /tmp/journal.txt")
+            machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log /tmp/*.log /tmp/hypr-*.txt 2>/dev/null; true")
+            machine.copy_from_vm("/tmp/journal.txt")
+            machine.copy_from_vm("/tmp/xlogs.tgz")
 
         # The update guard: a new system is approved once a user has logged in
         # (tester logged in above), and a system that never got
@@ -152,7 +157,7 @@ let
     extra = ''
       machine.succeed("${gsettings} org.gnome.desktop.peripherals.touchpad disable-while-typing | grep -q false")
       machine.succeed("${gsettings} org.gnome.desktop.interface gtk-theme | grep -q ${if appearance == "light" then "SnapOS-Light" else "Colloid-Red-Dark"}")
-      machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q ${if appearance == "light" then "default" else "prefer-dark"}")
+      machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q ${if appearance == "light" then "prefer-light" else "prefer-dark"}")
     '';
   };
   plasma = appearance: mk {

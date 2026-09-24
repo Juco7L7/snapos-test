@@ -465,6 +465,7 @@ in {
               <property name="show-labels" type="bool" value="false"/>
               <property name="grouping" type="bool" value="true"/>
               <property name="flat-buttons" type="bool" value="true"/>
+              <property name="show-handle" type="bool" value="false"/>
             </property>
             <property name="plugin-8" type="string" value="separator">
               <property name="expand" type="bool" value="true"/>
