@@ -256,7 +256,10 @@ let
       sleep 2
     done
     sleep 5
+    # the look-and-feel package brings its own wallpaper along a little later,
+    # so the SnapOS one is set after it has settled
     ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-lookandfeel -a ${if light then "org.kde.breeze.desktop" else "org.kde.breezedark.desktop"}
+    sleep 10
     ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} || exit 1
     # the panel like Budgie's dock: 45 pixels, the SnapOS programs pinned
     ${pkgs.systemd}/bin/busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s '
@@ -269,7 +272,9 @@ let
           ws[j].currentConfigGroup = ["General"];
           ws[j].writeConfig("launchers", ["applications:snapguard.desktop", "applications:firefox.desktop", "applications:org.gnome.Software.desktop", "applications:org.kde.konsole.desktop"]);
         }
-      }' && touch "$marker"
+      }' || exit 1
+    sleep 5
+    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} && touch "$marker"
   '';
   xfceLook = pkgs.writeShellScriptBin "snapos-xfce-look" ''
     dir="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos"

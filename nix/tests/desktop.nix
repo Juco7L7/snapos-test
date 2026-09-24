@@ -20,6 +20,10 @@ let
         imports = [ ../../configuration.nix ];
 
         networking.hostName = lib.mkForce "machine";
+        # no antivirus in the desktop VMs: loading the virus database takes
+        # the VM's memory and time, and SnapGuard has its own test
+        services.clamav.daemon.enable = lib.mkForce false;
+        services.clamav.updater.enable = lib.mkForce false;
         snapos.desktop = desktop;
         snapos.appearance = appearance;
 
