@@ -69,7 +69,6 @@ let
     }
 
     dwindle {
-        pseudotile = true
         preserve_split = true
     }
 
@@ -215,23 +214,41 @@ let
   # plasma-apply-* and xfconf-query only work inside a session, so a small
   # autostart entry applies the wallpaper and theme once per user.
   plasmaLook = pkgs.writeShellScriptBin "snapos-plasma-look" ''
-    marker="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos/plasma-look-done"
+    dir="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos"
+    mkdir -p "$dir"
+    marker="$dir/plasma-look-done"
     [ -e "$marker" ] && exit 0
-    sleep 8
-    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-lookandfeel -a ${if light then "org.kde.breeze.desktop" else "org.kde.breezedark.desktop"} || true
-    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} || true
-    mkdir -p "$(dirname "$marker")" && touch "$marker"
+    exec >> "$dir/plasma-look.log" 2>&1
+    # the shell must be up before it can be told anything
+    for i in $(seq 1 60); do
+      ${pkgs.systemd}/bin/busctl --user list 2>/dev/null | grep -q org.kde.plasmashell && break
+      sleep 2
+    done
+    sleep 5
+    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-lookandfeel -a ${if light then "org.kde.breeze.desktop" else "org.kde.breezedark.desktop"}
+    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} && touch "$marker"
   '';
   xfceLook = pkgs.writeShellScriptBin "snapos-xfce-look" ''
-    marker="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos/xfce-look-done"
+    dir="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos"
+    mkdir -p "$dir"
+    marker="$dir/xfce-look-done"
     [ -e "$marker" ] && exit 0
-    sleep 5
+    exec >> "$dir/xfce-look.log" 2>&1
     q=${pkgs.xfconf}/bin/xfconf-query
-    for p in $($q -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do $q -c xfce4-desktop -p "$p" -s ${wallpaper}; done
-    $q -c xsettings -p /Net/ThemeName -s ${gtkTheme}
-    $q -c xsettings -p /Net/IconThemeName -s ${iconName}
-    $q -c xfwm4 -p /general/theme -s ${gtkTheme}
-    mkdir -p "$(dirname "$marker")" && touch "$marker"
+    # the desktop creates its wallpaper settings once it knows the monitors
+    for i in $(seq 1 60); do
+      $q -c xfce4-desktop -l 2>/dev/null | grep -qE 'last-image$' && break
+      sleep 2
+    done
+    $q -c xsettings -p /Net/ThemeName -n -t string -s ${gtkTheme}
+    $q -c xsettings -p /Net/IconThemeName -n -t string -s ${iconName}
+    $q -c xfwm4 -p /general/theme -n -t string -s ${gtkTheme}
+    ok=0
+    for p in $($q -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
+      $q -c xfce4-desktop -p "$p" -n -t string -s ${wallpaper} && ok=1
+      $q -c xfce4-desktop -p "$(dirname "$p")/image-style" -n -t int -s 5 || true
+    done
+    [ "$ok" = 1 ] && touch "$marker"
   '';
   autostart = name: exec: ''
     [Desktop Entry]

@@ -148,6 +148,9 @@ in
     extra = ''
       machine.succeed("grep -q 'ColorScheme=BreezeDark' /etc/xdg/kdeglobals")
       machine.succeed("grep -q 'Theme=Papirus-Dark' /etc/xdg/kdeglobals")
+      # the first-login script applied the SnapOS wallpaper and look
+      machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/plasma-look-done'", timeout=240)
+      machine.succeed("su tester -c 'grep -rq snapos-dark.jpeg ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
     '';
   };
   xfce = mk {
@@ -155,7 +158,9 @@ in
     processes = [ "xfce4-panel" "xfwm4" "xfdesktop" ];
     extra = ''
       machine.succeed("grep -q 'SnapOS-Light' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
-      machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/xfce-look-done'", timeout=120)
+      machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/xfce-look-done'", timeout=240)
+      machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xfce4-desktop -l -v | grep -q snapos-light.jpeg'")
+      machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xsettings -p /Net/ThemeName | grep -q SnapOS-Light'")
     '';
   };
   hyprland = mk {
