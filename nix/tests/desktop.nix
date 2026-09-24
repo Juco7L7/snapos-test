@@ -47,8 +47,6 @@ let
             machine.wait_until_succeeds("pgrep -u tester -f " + p, timeout=300)
         machine.sleep(30)
         machine.screenshot("02-desktop")
-        machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log /tmp/*.log /tmp/hypr-*.txt 2>/dev/null; true")
-        machine.copy_from_vm("/tmp/xlogs.tgz")
         machine.execute("(echo 'variant: ${name}'; free -m; echo; echo running services: $(systemctl list-units --type=service --state=running --no-legend | wc -l); echo processes: $(ps -e | wc -l)) > /tmp/metrics.txt")
         machine.copy_from_vm("/tmp/metrics.txt")
         machine.succeed("grep -q ${appearance} /etc/snapos/appearance")
@@ -58,6 +56,8 @@ let
         machine.succeed("snapguard status")
         machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
         ${extra}
+        machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log /tmp/*.log /tmp/hypr-*.txt 2>/dev/null; true")
+        machine.copy_from_vm("/tmp/xlogs.tgz")
 
         # The update guard: a new system is approved once a user has logged in
         # (tester is logged in by autologin), and a system that never got
@@ -205,6 +205,15 @@ in
       machine.execute(hy + "pkill waybar; pkill hyprpaper; (timeout 25 waybar -l debug > /tmp/waybar.log 2>&1 &); (timeout 25 hyprpaper > /tmp/hyprpaper.log 2>&1 &)'")
       machine.sleep(15)
       machine.screenshot("03-restarted")
+      # the same bar with the smallest possible configuration, at the top and at the bottom
+      machine.execute("printf '{ \"layer\": \"top\", \"position\": \"top\", \"height\": 40, \"modules-center\": [\"clock\"] }' > /tmp/top.json; printf '{ \"layer\": \"top\", \"position\": \"bottom\", \"height\": 40, \"modules-center\": [\"clock\"] }' > /tmp/bottom.json; printf 'window#waybar { background: #e22a1c; color: #ffffff; }' > /tmp/bar.css; chmod 644 /tmp/top.json /tmp/bottom.json /tmp/bar.css")
+      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/top.json -s /tmp/bar.css > /tmp/waybar-top.log 2>&1 &)'")
+      machine.sleep(10)
+      machine.screenshot("04-bar-top")
+      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/bottom.json -s /tmp/bar.css > /tmp/waybar-bottom.log 2>&1 &)'")
+      machine.sleep(10)
+      machine.screenshot("05-bar-bottom")
+      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers2.txt'")
       machine.succeed("grep -q waybar /tmp/hypr-layers.txt")
     '';
   };
