@@ -170,6 +170,10 @@ in {
       ++ optional config.services.xserver.enable pkgs.snaphelper
       ++ [ pkgs.bubblewrap pkgs.debootstrap pkgs.dpkg pkgs.libnotify ];
 
+    # SnapHelper's animations live in share/snapos; desktops that do not link
+    # the whole share tree (Hyprland) still need it.
+    environment.pathsToLink = [ "/share/snapos" ];
+
     # Programs from the Debian layer show up in the menu and on the PATH.
     environment.sessionVariables.XDG_DATA_DIRS = [ "${debLayer}/exports/share" ];
     environment.extraInit = ''
