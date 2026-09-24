@@ -156,7 +156,7 @@ let
     position = "bottom";
     height = 45;
     spacing = 2;
-    modules-left = [ "custom/menu" "custom/snapguard" "custom/firefox" "custom/software" "custom/terminal" "wlr/taskbar" ];
+    modules-left = [ "custom/menu" "custom/snapguard" "custom/firefox" "custom/software" "custom/terminal" "hyprland/window" ];
     modules-center = [ "hyprland/workspaces" ];
     modules-right = [ "tray" "network" "pulseaudio" "battery" "clock" ];
     "custom/menu" = { format = " "; on-click = launcher; tooltip = false; };
@@ -164,7 +164,9 @@ let
     "custom/firefox" = { format = " "; on-click = "firefox"; tooltip = false; };
     "custom/software" = { format = " "; on-click = "gnome-software"; tooltip = false; };
     "custom/terminal" = { format = " "; on-click = "kitty"; tooltip = false; };
-    "wlr/taskbar" = { format = "{icon}"; icon-size = 24; icon-theme = iconName; on-click = "activate"; on-click-middle = "close"; tooltip-format = "{title}"; };
+    # (waybar's taskbar module blocks the bar on Hyprland; the title of the
+    # focused window takes its place)
+    "hyprland/window" = { format = "{title}"; max-length = 60; separate-outputs = true; };
     "hyprland/workspaces" = { format = "{id}"; on-click = "activate"; };
     clock = { format = "{:%H:%M}"; format-alt = "{:%a %d %b %Y}"; tooltip-format = "{:%A, %d %B %Y}"; };
     network = { format-wifi = "  {essid}"; format-ethernet = "  wired"; format-disconnected = "  offline"; on-click = "nm-connection-editor"; };
@@ -183,9 +185,7 @@ let
     #custom-firefox { background-image: url("${barIcons}/firefox.png"); }
     #custom-software { background-image: url("${barIcons}/org.gnome.Software.png"); }
     #custom-terminal { background-image: url("${barIcons}/kitty.png"); }
-    #taskbar { margin-left: 6px; }
-    #taskbar button { padding: 0 6px; border-bottom: 3px solid transparent; }
-    #taskbar button.active { border-bottom: 3px solid #${accent}; }
+    #window { padding: 0 14px; color: #${fg}; }
     #workspaces button { padding: 0 8px; color: #${fg}; border-bottom: 3px solid transparent; }
     #workspaces button.active { color: #${accent}; border-bottom: 3px solid #${accent}; }
     #clock, #network, #pulseaudio, #battery, #tray { padding: 0 10px; }

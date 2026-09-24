@@ -192,41 +192,15 @@ in
       virtualisation.qemu.options = [ "-vga none -device virtio-gpu-pci" ];
       environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = "1";
       environment.variables.AQ_NO_ATOMIC = "1";
-      environment.systemPackages = [ pkgs.jq ];
     };
     extra = ''
       machine.succeed("test -f /etc/snapos/hypr/hyprland.conf")
       machine.succeed("grep -q 'snapguard-watch' /etc/snapos/hypr/hyprland.conf")
       machine.wait_until_succeeds("su tester -c 'test -f ~/.config/hypr/hyprland.conf'", timeout=120)
-      # what Hyprland shows: layers (the bar), clients, and the bar and
-      # wallpaper programs run again with their output kept
-      hy = "su tester -c 'export XDG_RUNTIME_DIR=/run/user/$(id -u); export HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr | head -1); export WAYLAND_DISPLAY=$(ls $XDG_RUNTIME_DIR | grep -E ^wayland-[0-9]+$ | head -1); "
-      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers.txt; hyprctl clients > /tmp/hypr-clients.txt; hyprctl monitors > /tmp/hypr-monitors.txt; true'")
-      machine.execute(hy + "grim /tmp/grim.png'")
-      machine.copy_from_vm("/tmp/grim.png")
-      machine.execute(hy + "pkill waybar; (timeout 25 waybar -l debug > /tmp/waybar.log 2>&1 &)'")
-      machine.sleep(15)
-      machine.screenshot("03-restarted")
-      # the same bar with the smallest possible configuration, at the top and at the bottom
-      machine.execute("printf '{ \"layer\": \"top\", \"position\": \"top\", \"height\": 40, \"modules-center\": [\"clock\"] }' > /tmp/top.json; printf '{ \"layer\": \"top\", \"position\": \"bottom\", \"height\": 40, \"modules-center\": [\"clock\"] }' > /tmp/bottom.json; printf 'window#waybar { background: #e22a1c; color: #ffffff; }' > /tmp/bar.css; chmod 644 /tmp/top.json /tmp/bottom.json /tmp/bar.css")
-      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/top.json -s /tmp/bar.css > /tmp/waybar-top.log 2>&1 &)'")
-      machine.sleep(10)
-      machine.screenshot("04-bar-top")
-      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/bottom.json -s /tmp/bar.css > /tmp/waybar-bottom.log 2>&1 &)'")
-      machine.sleep(10)
-      machine.screenshot("05-bar-bottom")
-      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers2.txt'")
-      # the SnapOS bar without some modules, to find what keeps it from showing
-      machine.execute("jq '.[\"modules-left\"] |= map(select(. != \"wlr/taskbar\"))' /etc/xdg/waybar/config > /tmp/notaskbar.json; jq '.[\"modules-left\"] |= map(select(startswith(\"custom\") | not))' /etc/xdg/waybar/config > /tmp/nocustom.json; jq '.[\"modules-left\"] = []' /etc/xdg/waybar/config > /tmp/noleft.json; chmod 644 /tmp/*.json")
-      for v in ["notaskbar", "nocustom", "noleft"]:
-          machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/" + v + ".json > /tmp/waybar-" + v + ".log 2>&1 &)'")
-          machine.sleep(10)
-          machine.screenshot("06-" + v)
-      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/bottom.json -s /etc/xdg/waybar/style.css > /tmp/waybar-css.log 2>&1 &)'")
-      machine.sleep(10)
-      machine.screenshot("07-min-with-css")
-      machine.execute(hy + "pkill waybar; (waybar > /tmp/waybar-final.log 2>&1 &)'")
-      machine.sleep(10)
+      # the bar is a layer of Hyprland, the wallpaper program runs
+      hy = "su tester -c 'export XDG_RUNTIME_DIR=/run/user/$(id -u); export HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr | head -1); "
+      machine.wait_until_succeeds(hy + "hyprctl layers | grep -q waybar'", timeout=120)
+      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers.txt; hyprctl clients > /tmp/hypr-clients.txt'")
       machine.succeed("grep -q waybar /tmp/hypr-layers.txt")
     '';
   };
