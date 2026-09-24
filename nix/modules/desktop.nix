@@ -23,6 +23,19 @@ let
   fg     = if light then "000000" else "e8e8e8";
   dim    = if light then "c9c4be" else "333333";
 
+  # The icons of the Hyprland bar: the SnapOS programs pinned like on
+  # Budgie's dock (menu, defender, browser, programs store, terminal).
+  papirusApps = "${redIcons}/share/icons/Papirus/48x48/apps";
+  barIcons = pkgs.runCommand "snapos-bar-icons" { nativeBuildInputs = [ pkgs.librsvg ]; } ''
+    mkdir -p $out
+    cp ${../../branding/icons}/snapos-48.png $out/menu.png
+    cp ${../../branding/icons}/snapguard-${if light then "light" else "dark"}-48.png $out/snapguard.png
+    for i in firefox org.gnome.Software kitty; do
+      rsvg-convert -w 48 -h 48 ${papirusApps}/$i.svg -o $out/$i.png
+    done
+  '';
+  launcher = "wofi --show drun --conf /etc/xdg/wofi/config --style /etc/xdg/wofi/style.css";
+
   # ---- Hyprland: a complete, keyboard-driven desktop out of the box ----------
   hyprlandConf = pkgs.writeText "hyprland.conf" ''
     # SnapOS Hyprland. Super is the main key: Super+Enter terminal, Super+D
@@ -52,8 +65,8 @@ let
     }
 
     general {
-        gaps_in = 4
-        gaps_out = 8
+        gaps_in = 6
+        gaps_out = 12
         border_size = 2
         col.active_border = rgb(${accent})
         col.inactive_border = rgb(${dim})
@@ -77,9 +90,14 @@ let
         disable_splash_rendering = true
     }
 
+    # SnapOS windows float in the middle of the screen, like on the other
+    # desktops; everything else tiles.
+    windowrule = match:class ^(snaphelper|snapupdate|snapguard-gui|snapconfig|snapctl|org\.snapos\..*)$, float on, center on
+    windowrule = match:class ^(pavucontrol|nm-connection-editor)$, float on, center on
+
     $mod = SUPER
     bind = $mod, RETURN, exec, kitty
-    bind = $mod, D, exec, wofi --show drun --conf /etc/xdg/wofi/config --style /etc/xdg/wofi/style.css
+    bind = $mod, D, exec, ${launcher}
     bind = $mod, E, exec, thunar
     bind = $mod, Q, killactive,
     bind = $mod, F, fullscreen,
@@ -141,24 +159,38 @@ let
 
   waybarConfig = pkgs.writeText "waybar-config" (builtins.toJSON {
     layer = "top";
-    position = "top";
-    height = 32;
-    modules-left = [ "hyprland/workspaces" ];
-    modules-center = [ "clock" ];
-    modules-right = [ "tray" "network" "pulseaudio" "battery" ];
-    clock = { format = "{:%a %d %b  %H:%M}"; };
-    network = { format-wifi = "  {essid}"; format-ethernet = "  wired"; format-disconnected = "  offline"; };
-    pulseaudio = { format = "  {volume}%"; format-muted = "  muted"; on-click = "pavucontrol"; };
-    battery = { format = "  {capacity}%"; format-charging = "  {capacity}%"; };
-    tray = { spacing = 8; };
+    position = "bottom";
+    height = 45;
+    spacing = 2;
+    modules-left = [ "image#menu" "image#snapguard" "image#firefox" "image#software" "image#terminal" "wlr/taskbar" ];
+    modules-center = [ "hyprland/workspaces" ];
+    modules-right = [ "tray" "network" "pulseaudio" "battery" "clock" ];
+    "image#menu" = { path = "${barIcons}/menu.png"; size = 28; on-click = launcher; tooltip = false; };
+    "image#snapguard" = { path = "${barIcons}/snapguard.png"; size = 26; on-click = "snapguard-gui"; tooltip = false; };
+    "image#firefox" = { path = "${barIcons}/firefox.png"; size = 26; on-click = "firefox"; tooltip = false; };
+    "image#software" = { path = "${barIcons}/org.gnome.Software.png"; size = 26; on-click = "gnome-software"; tooltip = false; };
+    "image#terminal" = { path = "${barIcons}/kitty.png"; size = 26; on-click = "kitty"; tooltip = false; };
+    "wlr/taskbar" = { format = "{icon}"; icon-size = 24; icon-theme = iconName; on-click = "activate"; on-click-middle = "close"; tooltip-format = "{title}"; };
+    "hyprland/workspaces" = { format = "{id}"; on-click = "activate"; };
+    clock = { format = "{:%H:%M}"; format-alt = "{:%a %d %b %Y}"; tooltip-format = "{:%A, %d %B %Y}"; };
+    network = { format-wifi = "  {essid}"; format-ethernet = "  wired"; format-disconnected = "  offline"; on-click = "nm-connection-editor"; };
+    pulseaudio = { format = "  {volume}%"; format-muted = "  muted"; on-click = "pavucontrol"; };
+    battery = { format = "  {capacity}%"; format-charging = "  {capacity}%"; };
+    tray = { spacing = 8; icon-size = 20; };
   });
 
   waybarStyle = pkgs.writeText "waybar-style.css" ''
-    * { font-family: "DejaVu Sans", sans-serif; font-size: 13px; }
-    window#waybar { background: #${bg}; color: #${fg}; border-bottom: 2px solid #${accent}; }
-    #workspaces button { padding: 0 8px; color: #${fg}; }
-    #workspaces button.active { color: #${accent}; border-bottom: 2px solid #${accent}; }
+    * { font-family: "DejaVu Sans", "Symbols Nerd Font", sans-serif; font-size: 13px; min-height: 0; }
+    window#waybar { background: #${bg}; color: #${fg}; border-top: 1px solid #${accent}; }
+    #image { padding: 0 8px; }
+    #image.menu { padding: 0 10px 0 12px; }
+    #taskbar { margin-left: 6px; }
+    #taskbar button { padding: 0 6px; border-bottom: 3px solid transparent; }
+    #taskbar button.active { border-bottom: 3px solid #${accent}; }
+    #workspaces button { padding: 0 8px; color: #${fg}; border-bottom: 3px solid transparent; }
+    #workspaces button.active { color: #${accent}; border-bottom: 3px solid #${accent}; }
     #clock, #network, #pulseaudio, #battery, #tray { padding: 0 10px; }
+    #clock { font-weight: bold; padding-right: 16px; }
   '';
 
   wofiConfig = pkgs.writeText "wofi-config" ''
@@ -226,7 +258,19 @@ let
     done
     sleep 5
     ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-lookandfeel -a ${if light then "org.kde.breeze.desktop" else "org.kde.breezedark.desktop"}
-    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} && touch "$marker"
+    ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage ${wallpaper} || exit 1
+    # the panel like Budgie's dock: 45 pixels, the SnapOS programs pinned
+    ${pkgs.systemd}/bin/busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s '
+      var ps = panels();
+      for (var i = 0; i < ps.length; i++) {
+        ps[i].location = "bottom";
+        ps[i].height = 45;
+        var ws = ps[i].widgets("org.kde.plasma.icontasks");
+        for (var j = 0; j < ws.length; j++) {
+          ws[j].currentConfigGroup = ["General"];
+          ws[j].writeConfig("launchers", ["applications:snapguard.desktop", "applications:firefox.desktop", "applications:org.gnome.Software.desktop", "applications:org.kde.konsole.desktop"]);
+        }
+      }' && touch "$marker"
   '';
   xfceLook = pkgs.writeShellScriptBin "snapos-xfce-look" ''
     dir="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos"
@@ -235,19 +279,26 @@ let
     [ -e "$marker" ] && exit 0
     exec >> "$dir/xfce-look.log" 2>&1
     q=${pkgs.xfconf}/bin/xfconf-query
-    # the desktop creates its wallpaper settings once it knows the monitors
+    # the desktop must be up; the wallpaper is set per monitor and workspace
     for i in $(seq 1 60); do
-      $q -c xfce4-desktop -l 2>/dev/null | grep -qE 'last-image$' && break
+      ${pkgs.procps}/bin/pgrep -x xfdesktop >/dev/null && break
       sleep 2
     done
+    sleep 3
     $q -c xsettings -p /Net/ThemeName -n -t string -s ${gtkTheme}
     $q -c xsettings -p /Net/IconThemeName -n -t string -s ${iconName}
     $q -c xfwm4 -p /general/theme -n -t string -s ${gtkTheme}
     ok=0
-    for p in $($q -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
-      $q -c xfce4-desktop -p "$p" -n -t string -s ${wallpaper} && ok=1
-      $q -c xfce4-desktop -p "$(dirname "$p")/image-style" -n -t int -s 5 || true
+    monitors=$(${pkgs.xorg.xrandr}/bin/xrandr --listmonitors 2>/dev/null | awk 'NR > 1 { print $NF }')
+    echo "monitors: $monitors"
+    for m in $monitors; do
+      for w in 0 1 2 3; do
+        b="/backdrop/screen0/monitor$m/workspace$w"
+        $q -c xfce4-desktop -p "$b/last-image" -n -t string -s ${wallpaper} && ok=1
+        $q -c xfce4-desktop -p "$b/image-style" -n -t int -s 5 || true
+      done
     done
+    $q -c xfce4-desktop -l -v
     [ "$ok" = 1 ] && touch "$marker"
   '';
   autostart = name: exec: ''
@@ -338,8 +389,73 @@ in {
           </property>
         </channel>
       '';
+      # The panel the first time a user logs in: one bar at the bottom, 45
+      # pixels, with the menu, the SnapOS programs, the open windows, the
+      # tray and the clock (p=12 is the bottom edge).
+      environment.etc."xdg/xfce4/panel/default.xml".text = ''
+        <?xml version="1.0" encoding="UTF-8"?>
+        <channel name="xfce4-panel" version="1.0">
+          <property name="configver" type="int" value="2"/>
+          <property name="panels" type="array">
+            <value type="int" value="1"/>
+            <property name="dark-mode" type="bool" value="${if light then "false" else "true"}"/>
+            <property name="panel-1" type="empty">
+              <property name="position" type="string" value="p=12;x=0;y=0"/>
+              <property name="length" type="uint" value="100"/>
+              <property name="position-locked" type="bool" value="true"/>
+              <property name="size" type="uint" value="45"/>
+              <property name="icon-size" type="uint" value="0"/>
+              <property name="plugin-ids" type="array">
+                <value type="int" value="1"/>
+                <value type="int" value="2"/>
+                <value type="int" value="3"/>
+                <value type="int" value="4"/>
+                <value type="int" value="5"/>
+                <value type="int" value="6"/>
+                <value type="int" value="7"/>
+                <value type="int" value="8"/>
+                <value type="int" value="9"/>
+                <value type="int" value="10"/>
+                <value type="int" value="11"/>
+              </property>
+            </property>
+          </property>
+          <property name="plugins" type="empty">
+            <property name="plugin-1" type="string" value="whiskermenu"/>
+            <property name="plugin-2" type="string" value="launcher">
+              <property name="items" type="array"><value type="string" value="snapguard.desktop"/></property>
+            </property>
+            <property name="plugin-3" type="string" value="launcher">
+              <property name="items" type="array"><value type="string" value="firefox.desktop"/></property>
+            </property>
+            <property name="plugin-4" type="string" value="launcher">
+              <property name="items" type="array"><value type="string" value="org.gnome.Software.desktop"/></property>
+            </property>
+            <property name="plugin-5" type="string" value="launcher">
+              <property name="items" type="array"><value type="string" value="xfce4-terminal.desktop"/></property>
+            </property>
+            <property name="plugin-6" type="string" value="tasklist">
+              <property name="show-labels" type="bool" value="false"/>
+              <property name="grouping" type="bool" value="true"/>
+            </property>
+            <property name="plugin-7" type="string" value="separator">
+              <property name="expand" type="bool" value="true"/>
+              <property name="style" type="uint" value="0"/>
+            </property>
+            <property name="plugin-8" type="string" value="systray">
+              <property name="square-icons" type="bool" value="true"/>
+            </property>
+            <property name="plugin-9" type="string" value="pulseaudio"/>
+            <property name="plugin-10" type="string" value="clock">
+              <property name="digital-layout" type="uint" value="3"/>
+              <property name="digital-time-format" type="string" value="%H:%M"/>
+            </property>
+            <property name="plugin-11" type="string" value="actions"/>
+          </property>
+        </channel>
+      '';
       environment.etc."xdg/autostart/snapos-xfce-look.desktop".text = autostart "SnapOS look" "${xfceLook}/bin/snapos-xfce-look";
-      environment.systemPackages = [ pkgs.xfce.xfce4-whiskermenu-plugin ];
+      environment.systemPackages = [ pkgs.xfce4-whiskermenu-plugin ];
     })
 
     (mkIf (desk == "hyprland") {
@@ -352,9 +468,10 @@ in {
       environment.etc."xdg/wofi/style.css".source = wofiStyle;
       environment.etc."xdg/mako/config".source = makoConfig;
       services.displayManager.sessionPackages = [ hyprlandSessionPackage ];
+      fonts.packages = [ pkgs.nerd-fonts.symbols-only ];
       environment.systemPackages = with pkgs; [
         waybar wofi mako hyprpaper hyprlock kitty networkmanagerapplet pavucontrol
-        brightnessctl grim slurp wl-clipboard xfce.thunar
+        brightnessctl grim slurp wl-clipboard thunar
       ];
       # Hyprland is Wayland-only; Firefox and GTK programs run natively on it.
       environment.sessionVariables.NIXOS_OZONE_WL = "1";

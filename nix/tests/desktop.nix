@@ -37,7 +37,7 @@ let
         machine.execute("cat /proc/cmdline > /tmp/cmdline.txt; uname -r > /tmp/kernel.txt; ps -eo user,comm,args > /tmp/ps.txt")
         machine.execute("systemctl status display-manager --no-pager > /tmp/dm-status.txt 2>&1")
         machine.execute("journalctl -b --no-pager > /tmp/journal.txt")
-        machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log 2>/dev/null; true")
+        machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log 2>/dev/null; true")
         for f in ["cmdline.txt", "kernel.txt", "ps.txt", "dm-status.txt", "journal.txt", "xlogs.tgz"]:
             machine.copy_from_vm("/tmp/" + f)
         machine.screenshot("01-state")
@@ -151,6 +151,7 @@ in
       # the first-login script applied the SnapOS wallpaper and look
       machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/plasma-look-done'", timeout=240)
       machine.succeed("su tester -c 'grep -rq snapos-dark.jpeg ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
+      machine.succeed("su tester -c 'grep -q applications:snapguard.desktop ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
     '';
   };
   xfce = mk {
@@ -161,6 +162,8 @@ in
       machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/xfce-look-done'", timeout=240)
       machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xfce4-desktop -l -v | grep -q snapos-light.jpeg'")
       machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xsettings -p /Net/ThemeName | grep -q SnapOS-Light'")
+      machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xfce4-panel -p /panels/panel-1/position | grep -q p=12'")
+      machine.succeed("su tester -c 'DISPLAY=:0 xfconf-query -c xfce4-panel -p /plugins/plugin-1 | grep -q whiskermenu'")
     '';
   };
   hyprland = mk {
