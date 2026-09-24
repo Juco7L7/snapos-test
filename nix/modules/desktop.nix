@@ -136,10 +136,15 @@ let
     bindel = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
   '';
 
+  # hyprpaper 0.8: one wallpaper block; an empty monitor means every screen
   hyprpaperConf = pkgs.writeText "hyprpaper.conf" ''
-    preload = ${wallpaper}
-    wallpaper = , ${wallpaper}
     splash = false
+
+    wallpaper {
+        monitor =
+        path = ${wallpaper}
+        fit_mode = cover
+    }
   '';
 
   hyprlockConf = pkgs.writeText "hyprlock.conf" ''
@@ -281,7 +286,7 @@ let
     q=${pkgs.xfconf}/bin/xfconf-query
     # the desktop must be up; the wallpaper is set per monitor and workspace
     for i in $(seq 1 60); do
-      ${pkgs.procps}/bin/pgrep -x xfdesktop >/dev/null && break
+      ${pkgs.procps}/bin/pgrep -f xfdesktop >/dev/null && break
       sleep 2
     done
     sleep 3
@@ -381,6 +386,13 @@ in {
           </property>
           <property name="Gtk" type="empty">
             <property name="CursorThemeName" type="string" value="Adwaita"/>
+            <property name="FontName" type="string" value="Cantarell 10"/>
+          </property>
+          <property name="Xft" type="empty">
+            <property name="Antialias" type="int" value="1"/>
+            <property name="Hinting" type="int" value="1"/>
+            <property name="HintStyle" type="string" value="hintslight"/>
+            <property name="RGBA" type="string" value="rgb"/>
           </property>
         </channel>
       '';
@@ -389,8 +401,21 @@ in {
         <channel name="xfwm4" version="1.0">
           <property name="general" type="empty">
             <property name="theme" type="string" value="${gtkTheme}"/>
+            <property name="title_font" type="string" value="Cantarell Bold 10"/>
+            <property name="button_layout" type="string" value="O|HMC"/>
+            <property name="placement_mode" type="string" value="center"/>
           </property>
         </channel>
+      '';
+      # The menu button shows the SnapOS logo (the plugin reads its defaults
+      # from the system folders too).
+      environment.etc."xdg/xfce4/panel/whiskermenu-1.rc".text = ''
+        button-icon=snapos
+        show-button-title=false
+        show-button-icon=true
+        launcher-show-description=false
+        position-search-alternate=true
+        favorites=snapguard.desktop,firefox.desktop,org.gnome.Software.desktop,xfce4-terminal.desktop
       '';
       # The panel the first time a user logs in: one bar at the bottom, 45
       # pixels, with the menu, the SnapOS programs, the open windows, the
@@ -459,6 +484,7 @@ in {
       '';
       environment.etc."xdg/autostart/snapos-xfce-look.desktop".text = autostart "SnapOS look" "${xfceLook}/bin/snapos-xfce-look";
       environment.systemPackages = [ pkgs.xfce4-whiskermenu-plugin ];
+      fonts.packages = [ pkgs.cantarell-fonts ];
     })
 
     (mkIf (desk == "hyprland") {

@@ -56,6 +56,7 @@ let
         machine.succeed("snapguard status")
         machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
         ${extra}
+        machine.screenshot("09-final")
         machine.execute("tar czf /tmp/xlogs.tgz /var/log/lightdm /var/log/X.0.log /home/*/.xsession-errors /home/*/.config/snapos/*.log /tmp/*.log /tmp/hypr-*.txt 2>/dev/null; true")
         machine.copy_from_vm("/tmp/xlogs.tgz")
 
@@ -191,6 +192,7 @@ in
       virtualisation.qemu.options = [ "-vga none -device virtio-gpu-pci" ];
       environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = "1";
       environment.variables.AQ_NO_ATOMIC = "1";
+      environment.systemPackages = [ pkgs.jq ];
     };
     extra = ''
       machine.succeed("test -f /etc/snapos/hypr/hyprland.conf")
@@ -214,6 +216,17 @@ in
       machine.sleep(10)
       machine.screenshot("05-bar-bottom")
       machine.execute(hy + "hyprctl layers > /tmp/hypr-layers2.txt'")
+      # the SnapOS bar without one module at a time, to find what blocks it
+      machine.execute("jq '.[\"modules-right\"] |= map(select(. != \"tray\"))' /etc/xdg/waybar/config > /tmp/notray.json; jq '.[\"modules-left\"] |= map(select(. != \"wlr/taskbar\"))' /etc/xdg/waybar/config > /tmp/notaskbar.json; jq '.[\"modules-left\"] |= map(select(startswith(\"image\") | not))' /etc/xdg/waybar/config > /tmp/noimages.json; chmod 644 /tmp/*.json")
+      for v in ["notray", "notaskbar", "noimages"]:
+          machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/" + v + ".json > /tmp/waybar-" + v + ".log 2>&1 &)'")
+          machine.sleep(10)
+          machine.screenshot("06-" + v)
+      machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/bottom.json -s /etc/xdg/waybar/style.css > /tmp/waybar-css.log 2>&1 &)'")
+      machine.sleep(10)
+      machine.screenshot("07-min-with-css")
+      machine.execute(hy + "pkill waybar; (waybar > /tmp/waybar-final.log 2>&1 &)'")
+      machine.sleep(10)
       machine.succeed("grep -q waybar /tmp/hypr-layers.txt")
     '';
   };
