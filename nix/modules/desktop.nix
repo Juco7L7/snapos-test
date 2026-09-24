@@ -289,6 +289,7 @@ let
     $q -c xsettings -p /Net/IconThemeName -n -t string -s ${iconName}
     $q -c xfwm4 -p /general/theme -n -t string -s ${gtkTheme}
     ok=0
+    ${pkgs.xorg.xrandr}/bin/xrandr --listmonitors
     monitors=$(${pkgs.xorg.xrandr}/bin/xrandr --listmonitors 2>/dev/null | awk 'NR > 1 { print $NF }')
     echo "monitors: $monitors"
     for m in $monitors; do
@@ -298,7 +299,9 @@ let
         $q -c xfce4-desktop -p "$b/image-style" -n -t int -s 5 || true
       done
     done
+    $q -c xfce4-desktop -p /desktop-icons/style -n -t int -s 0
     $q -c xfce4-desktop -l -v
+    ${pkgs.xfce.xfdesktop}/bin/xfdesktop --reload || true
     [ "$ok" = 1 ] && touch "$marker"
   '';
   autostart = name: exec: ''
