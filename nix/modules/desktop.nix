@@ -30,9 +30,9 @@ let
     mkdir -p $out
     cp ${../../branding/icons}/snapos-48.png $out/menu.png
     cp ${../../branding/icons}/snapguard-${if light then "light" else "dark"}-48.png $out/snapguard.png
-    for i in firefox org.gnome.Software kitty; do
-      rsvg-convert -w 48 -h 48 ${papirusApps}/$i.svg -o $out/$i.png
-    done
+    cp ${../../branding/icons}/snapfox-48.png $out/snapweb.png
+    rsvg-convert -w 48 -h 48 ${papirusApps}/org.gnome.Software.svg -o $out/software.png
+    rsvg-convert -w 48 -h 48 ${papirusApps}/utilities-terminal.svg -o $out/terminal.png
   '';
   launcher = "wofi --show drun --conf /etc/xdg/wofi/config --style /etc/xdg/wofi/style.css";
 
@@ -182,9 +182,9 @@ let
       min-width: 38px; background-repeat: no-repeat; background-position: center; background-size: 26px 26px; }
     #custom-menu { background-image: url("${barIcons}/menu.png"); background-size: 28px 28px; margin-left: 6px; }
     #custom-snapguard { background-image: url("${barIcons}/snapguard.png"); }
-    #custom-firefox { background-image: url("${barIcons}/firefox.png"); }
-    #custom-software { background-image: url("${barIcons}/org.gnome.Software.png"); }
-    #custom-terminal { background-image: url("${barIcons}/kitty.png"); }
+    #custom-firefox { background-image: url("${barIcons}/snapweb.png"); }
+    #custom-software { background-image: url("${barIcons}/software.png"); }
+    #custom-terminal { background-image: url("${barIcons}/terminal.png"); }
     #window { padding: 0 14px; color: #${fg}; }
     #workspaces button { padding: 0 8px; color: #${fg}; border-bottom: 3px solid transparent; }
     #workspaces button.active { color: #${accent}; border-bottom: 3px solid #${accent}; }
@@ -300,7 +300,7 @@ let
     done
     $q -c xfce4-desktop -p /desktop-icons/style -n -t int -s 0
     $q -c xfce4-desktop -l -v
-    ${pkgs.xfce.xfdesktop}/bin/xfdesktop --reload || true
+    ${pkgs.xfdesktop}/bin/xfdesktop --reload || true
     [ "$ok" = 1 ] && touch "$marker"
   '';
   autostart = name: exec: ''
@@ -439,6 +439,7 @@ in {
                 <value type="int" value="9"/>
                 <value type="int" value="10"/>
                 <value type="int" value="11"/>
+                <value type="int" value="12"/>
               </property>
             </property>
           </property>
@@ -456,29 +457,41 @@ in {
             <property name="plugin-5" type="string" value="launcher">
               <property name="items" type="array"><value type="string" value="xfce4-terminal.desktop"/></property>
             </property>
-            <property name="plugin-6" type="string" value="tasklist">
+            <property name="plugin-6" type="string" value="separator">
+              <property name="expand" type="bool" value="false"/>
+              <property name="style" type="uint" value="0"/>
+            </property>
+            <property name="plugin-7" type="string" value="tasklist">
               <property name="show-labels" type="bool" value="false"/>
               <property name="grouping" type="bool" value="true"/>
+              <property name="flat-buttons" type="bool" value="true"/>
             </property>
-            <property name="plugin-7" type="string" value="separator">
+            <property name="plugin-8" type="string" value="separator">
               <property name="expand" type="bool" value="true"/>
               <property name="style" type="uint" value="0"/>
             </property>
-            <property name="plugin-8" type="string" value="systray">
+            <property name="plugin-9" type="string" value="systray">
               <property name="square-icons" type="bool" value="true"/>
+              <property name="icon-size" type="int" value="22"/>
             </property>
-            <property name="plugin-9" type="string" value="pulseaudio"/>
-            <property name="plugin-10" type="string" value="clock">
+            <property name="plugin-10" type="string" value="pulseaudio">
+              <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
+            </property>
+            <property name="plugin-11" type="string" value="power-manager-plugin"/>
+            <property name="plugin-12" type="string" value="clock">
+              <property name="mode" type="uint" value="2"/>
               <property name="digital-layout" type="uint" value="3"/>
               <property name="digital-time-format" type="string" value="%H:%M"/>
+              <property name="digital-time-font" type="string" value="Cantarell Bold 11"/>
             </property>
-            <property name="plugin-11" type="string" value="actions"/>
           </property>
         </channel>
       '';
       environment.etc."xdg/autostart/snapos-xfce-look.desktop".text = autostart "SnapOS look" "${xfceLook}/bin/snapos-xfce-look";
       environment.systemPackages = [ pkgs.xfce4-whiskermenu-plugin ];
       fonts.packages = [ pkgs.cantarell-fonts ];
+      # the network icon in the tray (Wi-Fi, wired)
+      programs.nm-applet = { enable = true; indicator = true; };
     })
 
     (mkIf (desk == "hyprland") {

@@ -4,7 +4,15 @@
 # the desktop's own processes are up, the SnapOS look and programs are in
 # place, and the update guard approves a system once someone has logged in.
 let
-  mk = { name, desktop, appearance ? "dark", processes, extra ? "", vm ? { }, autoLogin ? true, login ? "" }:
+  # The login screen is photographed and the password typed, as a person
+  # would do; then the desktop is photographed.
+  loginScreen = ''
+        machine.wait_until_succeeds("pgrep -f slick-greeter", timeout=300)
+        machine.sleep(20)
+        machine.screenshot("01-login")
+        machine.send_chars("tester\n")
+  '';
+  mk = { name, desktop, appearance ? "dark", processes, extra ? "", vm ? { }, autoLogin ? false, login ? loginScreen }:
     pkgs.testers.runNixOSTest {
       name = "snapos-${name}";
 
@@ -61,7 +69,7 @@ let
         machine.copy_from_vm("/tmp/xlogs.tgz")
 
         # The update guard: a new system is approved once a user has logged in
-        # (tester is logged in by autologin), and a system that never got
+        # (tester logged in above), and a system that never got
         # approved is undone at the next boot.
         machine.succeed("systemctl is-enabled snapos-update-guard snapos-update-approve")
         machine.succeed("printf 'previous=1\\nattempts=0\\nname=test-release\\n' > /var/lib/snapos/update/update-pending")
@@ -136,56 +144,47 @@ let
     '';
   };
 in
-{
-  desktop = mk {
-    name = "desktop"; desktop = "budgie";
+let
+  # every desktop in both appearances
+  budgie = appearance: mk {
+    name = "desktop" + (if appearance == "light" then "-light" else ""); desktop = "budgie"; inherit appearance;
     processes = [ "'labwc|budgie-wm'" "'budgie-panel|budgie-desktop'" ];
     extra = ''
       machine.succeed("${gsettings} org.gnome.desktop.peripherals.touchpad disable-while-typing | grep -q false")
-      machine.succeed("${gsettings} org.gnome.desktop.interface gtk-theme | grep -q Colloid-Red-Dark")
-      machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q prefer-dark")
+      machine.succeed("${gsettings} org.gnome.desktop.interface gtk-theme | grep -q ${if appearance == "light" then "SnapOS-Light" else "Colloid-Red-Dark"}")
+      machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q ${if appearance == "light" then "default" else "prefer-dark"}")
     '';
   };
-  plasma = mk {
-    name = "plasma"; desktop = "plasma";
+  plasma = appearance: mk {
+    name = "plasma" + (if appearance == "light" then "-light" else ""); desktop = "plasma"; inherit appearance;
     processes = [ "plasmashell" "kwin_x11" ];
     extra = ''
-      machine.succeed("grep -q 'ColorScheme=BreezeDark' /etc/xdg/kdeglobals")
-      machine.succeed("grep -q 'Theme=Papirus-Dark' /etc/xdg/kdeglobals")
-      # the first-login script applied the SnapOS wallpaper and look
+      machine.succeed("grep -q 'ColorScheme=${if appearance == "light" then "BreezeLight" else "BreezeDark"}' /etc/xdg/kdeglobals")
+      machine.succeed("grep -q 'Theme=${if appearance == "light" then "Papirus-Light" else "Papirus-Dark"}' /etc/xdg/kdeglobals")
+      # the first-login script applied the SnapOS wallpaper, look and pins
       machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/plasma-look-done'", timeout=240)
-      machine.succeed("su tester -c 'grep -rq snapos-dark.jpeg ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
+      machine.succeed("su tester -c 'grep -rq snapos-${appearance}.jpeg ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
       machine.succeed("su tester -c 'grep -q applications:snapguard.desktop ~/.config/plasma-org.kde.plasma.desktop-appletsrc'")
     '';
   };
-  xfce = let
+  xfce = appearance: let
     xq = "su tester -c 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus DISPLAY=:0 xfconf-query";
+    theme = if appearance == "light" then "SnapOS-Light" else "Colloid-Red-Dark";
   in mk {
-    name = "xfce"; desktop = "xfce"; appearance = "light";
+    name = "xfce" + (if appearance == "light" then "-light" else ""); desktop = "xfce"; inherit appearance;
     processes = [ "xfce4-panel" "xfwm4" "xfdesktop" ];
     extra = ''
-      machine.succeed("grep -q 'SnapOS-Light' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
+      machine.succeed("grep -q '${theme}' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
       machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/xfce-look-done'", timeout=240)
-      machine.succeed("${xq} -c xfce4-desktop -l -v | grep -q snapos-light.jpeg'")
-      machine.succeed("${xq} -c xsettings -p /Net/ThemeName | grep -q SnapOS-Light'")
+      machine.succeed("${xq} -c xfce4-desktop -l -v | grep -q snapos-${appearance}.jpeg'")
+      machine.succeed("${xq} -c xsettings -p /Net/ThemeName | grep -q ${theme}'")
       machine.succeed("${xq} -c xfce4-panel -p /panels/panel-1/position | grep -q p=12'")
       machine.succeed("${xq} -c xfce4-panel -p /plugins/plugin-1 | grep -q whiskermenu'")
+      machine.wait_until_succeeds("pgrep -u tester -f nm-applet", timeout=120)
     '';
   };
-  # The login screen: no automatic login, the greeter is photographed, then
-  # the password is typed as a person would.
-  login = mk {
-    name = "login"; desktop = "budgie"; autoLogin = false;
-    processes = [ "budgie-panel" ];
-    login = ''
-      machine.wait_until_succeeds("pgrep -f slick-greeter", timeout=300)
-      machine.sleep(20)
-      machine.screenshot("01-login")
-      machine.send_chars("tester\n")
-    '';
-  };
-  hyprland = mk {
-    name = "hyprland"; desktop = "hyprland";
+  hyprland = appearance: mk {
+    name = "hyprland" + (if appearance == "light" then "-light" else ""); desktop = "hyprland"; inherit appearance;
     processes = [ "Hyprland" "waybar" "mako" "swaybg" ];
     vm = {
       # no GPU in the VM: a virtio display with software rendering
@@ -204,5 +203,15 @@ in
       machine.succeed("grep -q waybar /tmp/hypr-layers.txt")
     '';
   };
+in
+{
+  desktop = budgie "dark";
+  desktop-light = budgie "light";
+  plasma = plasma "dark";
+  plasma-light = plasma "light";
+  xfce = xfce "dark";
+  xfce-light = xfce "light";
+  hyprland = hyprland "dark";
+  hyprland-light = hyprland "light";
   inherit antivirus;
 }

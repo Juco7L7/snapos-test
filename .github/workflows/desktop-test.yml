@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        desktop: [ desktop, plasma, xfce, hyprland, login ]
+        desktop: [ desktop, desktop-light, plasma, plasma-light, xfce, xfce-light, hyprland, hyprland-light ]
     name: ${{ matrix.desktop }}
     steps:
       - uses: actions/checkout@v4
