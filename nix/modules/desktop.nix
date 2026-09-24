@@ -196,7 +196,8 @@ let
       cp /etc/snapos/hypr/hyprland.conf /etc/snapos/hypr/hyprpaper.conf /etc/snapos/hypr/hyprlock.conf "$d/"
       chmod u+w "$d"/*.conf
     fi
-    exec ${pkgs.hyprland}/bin/Hyprland
+    # start-hyprland sets the session up the way Hyprland expects (0.50+)
+    exec ${pkgs.hyprland}/bin/start-hyprland
   '';
   hyprlandSessionPackage = pkgs.runCommand "snapos-hyprland-session" { passthru.providedSessions = [ "snapos-hyprland" ]; } ''
     mkdir -p $out/share/wayland-sessions
