@@ -1,7 +1,10 @@
 { pkgs }:
 
+# One VM per desktop: the system boots, a user is logged in automatically,
+# the desktop's own processes are up, the SnapOS look and programs are in
+# place, and the update guard approves a system once someone has logged in.
 let
-  mk = name:
+  mk = { name, desktop, appearance ? "dark", processes, extra ? "", vm ? { } }:
     pkgs.testers.runNixOSTest {
       name = "snapos-${name}";
 
@@ -9,6 +12,8 @@ let
         imports = [ ../../configuration.nix ];
 
         networking.hostName = lib.mkForce "machine";
+        snapos.desktop = desktop;
+        snapos.appearance = appearance;
 
         virtualisation.memorySize = 3072;
         virtualisation.cores = 2;
@@ -23,7 +28,7 @@ let
           enable = true;
           user = "tester";
         };
-      };
+      } // vm;
 
       testScript = ''
         machine.start()
@@ -37,20 +42,19 @@ let
             machine.copy_from_vm("/tmp/" + f)
         machine.screenshot("01-state")
         machine.wait_for_unit("display-manager.service")
-        machine.wait_until_succeeds("pgrep -u tester -f 'labwc|budgie-wm'", timeout=300)
-        machine.wait_until_succeeds("pgrep -u tester -f 'budgie-panel|budgie-desktop'", timeout=300)
+        for p in ${builtins.toJSON processes}:
+            machine.wait_until_succeeds("pgrep -u tester -f " + p, timeout=300)
         machine.sleep(30)
         machine.screenshot("02-desktop")
         machine.execute("(echo 'variant: ${name}'; free -m; echo; echo running services: $(systemctl list-units --type=service --state=running --no-legend | wc -l); echo processes: $(ps -e | wc -l)) > /tmp/metrics.txt")
         machine.copy_from_vm("/tmp/metrics.txt")
-        machine.succeed("sudo -u tester env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus gsettings get org.gnome.desktop.peripherals.touchpad disable-while-typing | grep -q false")
-        machine.succeed("sudo -u tester env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus gsettings get org.gnome.desktop.interface gtk-theme | grep -q Colloid-Red-Dark")
-        machine.succeed("sudo -u tester env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus gsettings get org.gnome.desktop.interface color-scheme | grep -q prefer-dark")
-        machine.succeed("grep -q dark /etc/snapos/appearance")
+        machine.succeed("grep -q ${appearance} /etc/snapos/appearance")
         machine.succeed("test -f /etc/xdg/autostart/snaphelper.desktop")
         machine.succeed("test -s /run/current-system/sw/share/snapos/helper/snappy-declares.gif")
         machine.succeed("snapos help")
         machine.succeed("snapguard status")
+        machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
+        ${extra}
 
         # The update guard: a new system is approved once a user has logged in
         # (tester is logged in by autologin), and a system that never got
@@ -65,10 +69,11 @@ let
         machine.succeed("SNAPOS_GUARD_NO_REBOOT=1 snapos guard boot")
         machine.succeed("test ! -e /var/lib/snapos/update/update-pending")
         machine.succeed("grep -q test-release /var/lib/snapos/update/update-rolled-back")
-        # (a test VM has no system profile generations, so the switch itself is
-        # covered by tests/run.sh with a stand-in profile)
       '';
     };
+
+  gsettings = "sudo -u tester env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus gsettings get";
+
   # The VM has no internet, so ClamAV gets a tiny signature database written by
   # hand. The point is to prove the wiring: clamd, its socket, and SnapGuard
   # reading a private file of a normal user.
@@ -128,6 +133,45 @@ let
   };
 in
 {
-  desktop = mk "desktop";
+  desktop = mk {
+    name = "desktop"; desktop = "budgie";
+    processes = [ "'labwc|budgie-wm'" "'budgie-panel|budgie-desktop'" ];
+    extra = ''
+      machine.succeed("${gsettings} org.gnome.desktop.peripherals.touchpad disable-while-typing | grep -q false")
+      machine.succeed("${gsettings} org.gnome.desktop.interface gtk-theme | grep -q Colloid-Red-Dark")
+      machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q prefer-dark")
+    '';
+  };
+  plasma = mk {
+    name = "plasma"; desktop = "plasma";
+    processes = [ "plasmashell" "kwin_x11" ];
+    extra = ''
+      machine.succeed("grep -q 'ColorScheme=BreezeDark' /etc/xdg/kdeglobals")
+      machine.succeed("grep -q 'Theme=Papirus-Dark' /etc/xdg/kdeglobals")
+    '';
+  };
+  xfce = mk {
+    name = "xfce"; desktop = "xfce"; appearance = "light";
+    processes = [ "xfce4-panel" "xfwm4" "xfdesktop" ];
+    extra = ''
+      machine.succeed("grep -q 'SnapOS-Light' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
+      machine.wait_until_succeeds("su tester -c 'test -e ~/.config/snapos/xfce-look-done'", timeout=120)
+    '';
+  };
+  hyprland = mk {
+    name = "hyprland"; desktop = "hyprland";
+    processes = [ "Hyprland" "waybar" "mako" ];
+    vm = {
+      # no GPU in the VM: a virtio display with software rendering
+      virtualisation.qemu.options = [ "-vga none -device virtio-gpu-pci" ];
+      environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = "1";
+      environment.variables.AQ_NO_ATOMIC = "1";
+    };
+    extra = ''
+      machine.succeed("test -f /etc/snapos/hypr/hyprland.conf")
+      machine.succeed("grep -q 'snapguard-watch' /etc/snapos/hypr/hyprland.conf")
+      machine.wait_until_succeeds("su tester -c 'test -f ~/.config/hypr/hyprland.conf'", timeout=120)
+    '';
+  };
   inherit antivirus;
 }

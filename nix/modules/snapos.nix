@@ -53,11 +53,9 @@ let
   # The SnapOS release this tree is (the VERSION file at the repository root).
   snaposVersion = lib.strings.trim (builtins.readFile ../../VERSION);
 in {
+  imports = [ ./desktop.nix ];
+
   options.snapos = {
-    desktop = mkOption {
-      type = types.enum [ "budgie" ];
-      default = "budgie";
-    };
     theme = mkOption { type = types.str; default = "snappy-red"; };
     appearance = mkOption {
       type = types.enum [ "dark" "light" ];
@@ -90,11 +88,6 @@ in {
     '';
     environment.etc."snapos/version".text = snaposVersion;
 
-    services.xserver.enable = true;
-    services.desktopManager.budgie.enable = true;
-    services.xserver.displayManager.lightdm.enable = true;
-    services.desktopManager.gnome.enable = mkForce false;
-    services.desktopManager.plasma6.enable = mkForce false;
     # Budgie turns on Rygel, a DLNA media server that shares the user's music,
     # videos and photos with other devices on the network. Not on SnapOS.
     services.gnome.rygel.enable = false;
@@ -251,20 +244,7 @@ in {
       "x-scheme-handler/unknown" = "firefox.desktop";
     };
 
-    # The dock: 45 pixels high, with the defender, the browser, the programs
-    # store and the terminal pinned. (NixOS pins a media player by default.)
-    services.desktopManager.budgie.extraGSettingsOverrides = ''
-      [com.solus-project.icon-tasklist:Budgie]
-      pinned-launchers=["snapguard.desktop", "firefox.desktop", "org.gnome.Software.desktop", "org.gnome.Terminal.desktop"]
-
-      [com.solus-project.budgie-panel.panel:Budgie]
-      size=45
-    '';
-
     programs.dconf.enable = true;
-    environment.budgie.excludePackages = [
-      (pkgs.runCommand "nixos-background-info" { } "mkdir -p $out")
-    ];
     programs.dconf.profiles.user.databases = [
       {
         settings = {
@@ -287,9 +267,6 @@ in {
           };
           "org/gnome/desktop/peripherals/touchpad" = {
             disable-while-typing = false;
-          };
-          "com/solus-project/budgie-panel" = {
-            dark-theme = !light;
           };
         };
       }

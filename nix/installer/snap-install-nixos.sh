@@ -6,7 +6,7 @@ BLD=$'\033[1m'; DIM=$'\033[2m'; RST=$'\033[0m'
 MASCOT="/etc/snapos/mascot-console.txt"
 [ -r "$MASCOT" ] || MASCOT="/etc/snapos/mascot.txt"
 BUILD_ID="$(cat /etc/snapos-build 2>/dev/null || echo "?")"
-TOTAL=10
+TOTAL=11
 STEP=0
 STEPNAME=""
 L=en
@@ -43,10 +43,24 @@ EN[gfx_intel]="Intel graphics only (best for laptops with two graphics chips)"
 PT[gfx_intel]="Somente graficos Intel (melhor para notebooks com dois chips de video)"
 EN[r_gfx]="Graphics"
 PT[r_gfx]="Graficos"
-EN[intro_title]="Install in ten steps"
-PT[intro_title]="Instale em dez passos"
+EN[intro_title]="Install in eleven steps"
+PT[intro_title]="Instale em onze passos"
 EN[intro_done]="Ready to install"
 PT[intro_done]="Pronto para instalar"
+EN[s_desk]="Desktop"
+PT[s_desk]="Area de trabalho"
+EN[desk_title]="Choose the desktop"
+PT[desk_title]="Escolha a area de trabalho"
+EN[desk_budgie]="Budgie (recommended): simple, light, the SnapOS look"
+PT[desk_budgie]="Budgie (recomendado): simples, leve, a cara do SnapOS"
+EN[desk_plasma]="KDE Plasma: full-featured, highly configurable"
+PT[desk_plasma]="KDE Plasma: completo, muito configuravel"
+EN[desk_xfce]="Xfce: classic and very light"
+PT[desk_xfce]="Xfce: classico e muito leve"
+EN[desk_hyprland]="Hyprland: tiling, keyboard-driven, Wayland only (advanced)"
+PT[desk_hyprland]="Hyprland: janelas em mosaico, teclado, so Wayland (avancado)"
+EN[r_desk]="Desktop"
+PT[r_desk]="Area de trabalho"
 EN[s_look]="Appearance"
 PT[s_look]="Aparencia"
 EN[look_title]="Choose the look of the system"
@@ -220,7 +234,7 @@ intro_pause() {
 intro_at() { printf '\033[%d;%dH%s' "$1" "${3:-42}" "$2"; }
 intro_track() {
     # nodes before $1 are done, node $1 is the current step, the rest are waiting
-    local i j="" total=10
+    local i j="" total=11
     for ((i = 0; i < total; i++)); do
         if [ "$i" -lt "$1" ]; then j+="${ACC}▓${RST}"
         elif [ "$i" -eq "$1" ]; then j+="${BLD}${ACC}◉${RST}"
@@ -231,16 +245,16 @@ intro_track() {
 }
 intro_text() {
     [ -t 1 ] || return 0
-    local keys=(s_net s_kb s_loc s_tz s_disk s_acct s_look s_gfx s_review s_install) i
+    local keys=(s_net s_kb s_loc s_tz s_disk s_acct s_desk s_look s_gfx s_review s_install) i
     intro_at 5 "${BLD}${ACC}# $(t intro_title)${RST}"
     intro_pause 0.4
     for i in "${!keys[@]}"; do
         intro_track "$i"
-        intro_at 10 "${DIM}$(t step) $((i + 1))/10${RST}      "
+        intro_at 10 "${DIM}$(t step) $((i + 1))/11${RST}      "
         intro_at 11 "${BLD}$(printf '%-26s' "$(t "${keys[$i]}")")${RST}"
         intro_pause 0.28
     done
-    intro_track 10
+    intro_track 11
     intro_at 10 "$(printf '%-26s' '')"
     intro_at 11 "${GRN}✓${RST} ${BLD}$(printf '%-24s' "$(t intro_done)")${RST}"
     # Snappy is happy
@@ -267,6 +281,25 @@ restart() {
     sync
     systemctl reboot 2>/dev/null || reboot -f
     exit 0
+}
+
+choose_desktop() {
+    local choice
+    header
+    say "${BLD}$(t desk_title)${RST}"
+    printf '\n'
+    opt 1 "$(t desk_budgie)"
+    opt 2 "$(t desk_plasma)"
+    opt 3 "$(t desk_xfce)"
+    opt 4 "$(t desk_hyprland)"
+    caret
+    read -r choice
+    case "$choice" in
+        2) DESK=plasma;   DESKLABEL="KDE Plasma" ;;
+        3) DESK=xfce;     DESKLABEL="Xfce" ;;
+        4) DESK=hyprland; DESKLABEL="Hyprland" ;;
+        *) DESK=budgie;   DESKLABEL="Budgie" ;;
+    esac
 }
 
 choose_appearance() {
@@ -341,7 +374,7 @@ write_graphics() {
 
 update_system() {
     local f
-    step 10 s_install
+    step 11 s_install
     header
     say "$(t i_mount)..."
     mount /dev/disk/by-label/nixos /mnt || die "$(t f_mount nixos)"
@@ -597,13 +630,16 @@ askpass "$(t pass "$USERNAME")"
 printf '\n'
 ask "$(t host)" "snapos"; HOSTNAME="$ANSWER"
 
-step 7 s_look
+step 7 s_desk
+choose_desktop
+
+step 8 s_look
 choose_appearance
 
-step 8 s_gfx
+step 9 s_gfx
 choose_graphics
 
-step 9 s_review
+step 10 s_review
 header
 printf '  %-12s %s\n' "$(t r_kb)" "$KEYMAP"
 printf '  %-12s %s\n' "$(t r_loc)" "$LOCALE"
@@ -611,6 +647,7 @@ printf '  %-12s %s\n' "$(t r_tz)" "$TIMEZONE"
 printf '  %-12s %s%s%s\n' "$(t r_disk)" "$BLD" "$TARGET" "$RST"
 printf '  %-12s %s\n' "$(t r_user)" "$USERNAME"
 printf '  %-12s %s\n' "$(t r_host)" "$HOSTNAME"
+printf '  %-12s %s\n' "$(t r_desk)" "$DESKLABEL"
 printf '  %-12s %s\n' "$(t r_look)" "$LOOKLABEL"
 printf '  %-12s %s\n' "$(t r_gfx)" "$GFXLABEL"
 printf '\n  %s%s%s\n\n' "$ACC" "$(t erase)" "$RST"
@@ -618,7 +655,7 @@ printf '  %s' "$(t save)"
 read -r CONFIRM
 [ "$CONFIRM" = "SAVE" ] || die "$(t cancel)"
 
-step 10 s_install
+step 11 s_install
 header
 say "$(t i_part "$TARGET")..."
 parted -s "$TARGET" -- mklabel gpt \
@@ -648,12 +685,24 @@ mv /mnt/etc/nixos/hardware-configuration.nix /mnt/etc/snapos/
 cp -a /etc/snapos-src/. /mnt/etc/snapos/
 link_nixos
 
+# The console keymap has a graphical counterpart (X and Wayland layouts).
+case "$KEYMAP" in
+    br-abnt2) XKB_LAYOUT=br; XKB_VARIANT="" ;;
+    us-intl)  XKB_LAYOUT=us; XKB_VARIANT=intl ;;
+    uk)       XKB_LAYOUT=gb; XKB_VARIANT="" ;;
+    pt-latin1) XKB_LAYOUT=pt; XKB_VARIANT="" ;;
+    *)        XKB_LAYOUT="${KEYMAP%%-*}"; XKB_VARIANT="" ;;
+esac
+
 cat > /mnt/etc/snapos/local.nix <<EOF
 { ... }: {
   networking.hostName = "${HOSTNAME}";
   time.timeZone = "${TIMEZONE}";
   i18n.defaultLocale = "${LOCALE}";
   console.keyMap = "${KEYMAP}";
+  services.xserver.xkb.layout = "${XKB_LAYOUT}";
+  services.xserver.xkb.variant = "${XKB_VARIANT}";
+  snapos.desktop = "${DESK}";
   snapos.appearance = "${LOOK}";
   users.users.${USERNAME} = {
     isNormalUser = true;
