@@ -225,7 +225,7 @@ let
     marker="''${XDG_CONFIG_HOME:-$HOME/.config}/snapos/xfce-look-done"
     [ -e "$marker" ] && exit 0
     sleep 5
-    q=${pkgs.xfce.xfconf}/bin/xfconf-query
+    q=${pkgs.xfconf}/bin/xfconf-query
     for p in $($q -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do $q -c xfce4-desktop -p "$p" -s ${wallpaper}; done
     $q -c xsettings -p /Net/ThemeName -s ${gtkTheme}
     $q -c xsettings -p /Net/IconThemeName -s ${iconName}
