@@ -437,7 +437,7 @@ in {
               <property name="length" type="uint" value="100"/>
               <property name="position-locked" type="bool" value="true"/>
               <property name="size" type="uint" value="45"/>
-              <property name="icon-size" type="uint" value="0"/>
+              <property name="icon-size" type="uint" value="24"/>
               <property name="plugin-ids" type="array">
                 <value type="int" value="1"/>
                 <value type="int" value="2"/>
@@ -500,10 +500,12 @@ in {
         </channel>
       '';
       environment.etc."xdg/autostart/snapos-xfce-look.desktop".text = autostart "SnapOS look" "${xfceLook}/bin/snapos-xfce-look";
-      environment.systemPackages = [ pkgs.xfce4-whiskermenu-plugin ];
+      environment.systemPackages = [ pkgs.xfce4-whiskermenu-plugin pkgs.networkmanagerapplet ];
       fonts.packages = [ pkgs.cantarell-fonts ];
-      # the network icon in the tray (Wi-Fi, wired)
-      programs.nm-applet = { enable = true; indicator = true; };
+      # the network icon in the tray (Wi-Fi, wired): started by the session
+      # itself, so it has the display and the bus (the systemd user service
+      # NixOS offers never showed up in the tray)
+      environment.etc."xdg/autostart/snapos-network-icon.desktop".text = autostart "Network" "nm-applet --indicator" + "OnlyShowIn=XFCE;\n";
     })
 
     (mkIf (desk == "hyprland") {
