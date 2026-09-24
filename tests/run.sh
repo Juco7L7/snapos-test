@@ -535,7 +535,7 @@ check "installer turns the keymap into a graphical layout" bash -c "grep -q 'ser
 check "the template only defaults the desktop" grep -q 'snapos.desktop             = lib.mkDefault "budgie"' "$ROOT/configuration.nix"
 check "every desktop has a login session" bash -c "grep -q 'budgie = \"budgie-desktop\"' '$D_NIX' && grep -q 'plasma = \"plasmax11\"' '$D_NIX' && grep -q 'xfce = \"xfce\"' '$D_NIX' && grep -q 'hyprland = \"snapos-hyprland\"' '$D_NIX'"
 check "Hyprland starts the SnapOS programs" bash -c "grep -q 'exec-once = snapguard-watch' '$D_NIX' && grep -q 'exec-once = snapupdate --autostart' '$D_NIX' && grep -q 'exec-once = snaphelper --first-run' '$D_NIX'"
-check "Hyprland has a bar, a launcher, notifications and a wallpaper" bash -c "grep -q 'exec-once = waybar' '$D_NIX' && grep -q 'wofi --show drun' '$D_NIX' && grep -q 'exec-once = mako' '$D_NIX' && grep -q 'exec-once = hyprpaper' '$D_NIX'"
+check "Hyprland has a bar, a launcher, notifications and a wallpaper" bash -c "grep -q 'exec-once = waybar' '$D_NIX' && grep -q 'wofi --show drun' '$D_NIX' && grep -q 'exec-once = mako' '$D_NIX' && grep -q 'exec-once = swaybg' '$D_NIX'"
 check "Plasma and Xfce get the SnapOS look" bash -c "grep -q 'AccentColor=226,42,28' '$D_NIX' && grep -q 'ThemeName' '$D_NIX' && grep -q 'plasma-apply-wallpaperimage' '$D_NIX' && grep -q 'xfconf-query' '$D_NIX'"
 check "the light appearance reaches every desktop" bash -c "grep -q 'BreezeLight' '$D_NIX' && grep -q 'org.kde.breeze.desktop' '$D_NIX' && grep -q 'if light then \"ece9e5\"' '$D_NIX'"
 check "a VM test exists for each desktop" bash -c "for d in desktop plasma xfce hyprland; do grep -qE \"^  \$d = (let|mk)\" '$ROOT/nix/tests/desktop.nix' || exit 1; done"

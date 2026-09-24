@@ -186,7 +186,7 @@ in
   };
   hyprland = mk {
     name = "hyprland"; desktop = "hyprland";
-    processes = [ "Hyprland" "waybar" "mako" ];
+    processes = [ "Hyprland" "waybar" "mako" "swaybg" ];
     vm = {
       # no GPU in the VM: a virtio display with software rendering
       virtualisation.qemu.options = [ "-vga none -device virtio-gpu-pci" ];
@@ -201,10 +201,10 @@ in
       # what Hyprland shows: layers (the bar), clients, and the bar and
       # wallpaper programs run again with their output kept
       hy = "su tester -c 'export XDG_RUNTIME_DIR=/run/user/$(id -u); export HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr | head -1); export WAYLAND_DISPLAY=$(ls $XDG_RUNTIME_DIR | grep -E ^wayland-[0-9]+$ | head -1); "
-      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers.txt; hyprctl clients > /tmp/hypr-clients.txt; hyprctl monitors > /tmp/hypr-monitors.txt; hyprctl hyprpaper listloaded > /tmp/hypr-paper.txt 2>&1'")
+      machine.execute(hy + "hyprctl layers > /tmp/hypr-layers.txt; hyprctl clients > /tmp/hypr-clients.txt; hyprctl monitors > /tmp/hypr-monitors.txt; true'")
       machine.execute(hy + "grim /tmp/grim.png'")
       machine.copy_from_vm("/tmp/grim.png")
-      machine.execute(hy + "pkill waybar; pkill hyprpaper; (timeout 25 waybar -l debug > /tmp/waybar.log 2>&1 &); (timeout 25 hyprpaper > /tmp/hyprpaper.log 2>&1 &)'")
+      machine.execute(hy + "pkill waybar; (timeout 25 waybar -l debug > /tmp/waybar.log 2>&1 &)'")
       machine.sleep(15)
       machine.screenshot("03-restarted")
       # the same bar with the smallest possible configuration, at the top and at the bottom
@@ -216,9 +216,9 @@ in
       machine.sleep(10)
       machine.screenshot("05-bar-bottom")
       machine.execute(hy + "hyprctl layers > /tmp/hypr-layers2.txt'")
-      # the SnapOS bar without one module at a time, to find what blocks it
-      machine.execute("jq '.[\"modules-right\"] |= map(select(. != \"tray\"))' /etc/xdg/waybar/config > /tmp/notray.json; jq '.[\"modules-left\"] |= map(select(. != \"wlr/taskbar\"))' /etc/xdg/waybar/config > /tmp/notaskbar.json; jq '.[\"modules-left\"] |= map(select(startswith(\"image\") | not))' /etc/xdg/waybar/config > /tmp/noimages.json; chmod 644 /tmp/*.json")
-      for v in ["notray", "notaskbar", "noimages"]:
+      # the SnapOS bar without some modules, to find what keeps it from showing
+      machine.execute("jq '.[\"modules-left\"] |= map(select(. != \"wlr/taskbar\"))' /etc/xdg/waybar/config > /tmp/notaskbar.json; jq '.[\"modules-left\"] |= map(select(startswith(\"custom\") | not))' /etc/xdg/waybar/config > /tmp/nocustom.json; jq '.[\"modules-left\"] = []' /etc/xdg/waybar/config > /tmp/noleft.json; chmod 644 /tmp/*.json")
+      for v in ["notaskbar", "nocustom", "noleft"]:
           machine.execute(hy + "pkill waybar; (timeout 20 waybar -l debug -c /tmp/" + v + ".json > /tmp/waybar-" + v + ".log 2>&1 &)'")
           machine.sleep(10)
           machine.screenshot("06-" + v)

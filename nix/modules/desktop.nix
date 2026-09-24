@@ -45,7 +45,7 @@ let
 
     exec-once = waybar
     exec-once = mako
-    exec-once = hyprpaper
+    exec-once = swaybg -i ${wallpaper} -m fill
     exec-once = nm-applet --indicator
     exec-once = snapguard-watch
     exec-once = snapupdate --autostart
@@ -136,17 +136,6 @@ let
     bindel = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
   '';
 
-  # hyprpaper 0.8: one wallpaper block; an empty monitor means every screen
-  hyprpaperConf = pkgs.writeText "hyprpaper.conf" ''
-    splash = false
-
-    wallpaper {
-        monitor =
-        path = ${wallpaper}
-        fit_mode = cover
-    }
-  '';
-
   hyprlockConf = pkgs.writeText "hyprlock.conf" ''
     background {
         path = ${wallpaper}
@@ -167,14 +156,14 @@ let
     position = "bottom";
     height = 45;
     spacing = 2;
-    modules-left = [ "image#menu" "image#snapguard" "image#firefox" "image#software" "image#terminal" "wlr/taskbar" ];
+    modules-left = [ "custom/menu" "custom/snapguard" "custom/firefox" "custom/software" "custom/terminal" "wlr/taskbar" ];
     modules-center = [ "hyprland/workspaces" ];
     modules-right = [ "tray" "network" "pulseaudio" "battery" "clock" ];
-    "image#menu" = { path = "${barIcons}/menu.png"; size = 28; on-click = launcher; tooltip = false; };
-    "image#snapguard" = { path = "${barIcons}/snapguard.png"; size = 26; on-click = "snapguard-gui"; tooltip = false; };
-    "image#firefox" = { path = "${barIcons}/firefox.png"; size = 26; on-click = "firefox"; tooltip = false; };
-    "image#software" = { path = "${barIcons}/org.gnome.Software.png"; size = 26; on-click = "gnome-software"; tooltip = false; };
-    "image#terminal" = { path = "${barIcons}/kitty.png"; size = 26; on-click = "kitty"; tooltip = false; };
+    "custom/menu" = { format = " "; on-click = launcher; tooltip = false; };
+    "custom/snapguard" = { format = " "; on-click = "snapguard-gui"; tooltip = false; };
+    "custom/firefox" = { format = " "; on-click = "firefox"; tooltip = false; };
+    "custom/software" = { format = " "; on-click = "gnome-software"; tooltip = false; };
+    "custom/terminal" = { format = " "; on-click = "kitty"; tooltip = false; };
     "wlr/taskbar" = { format = "{icon}"; icon-size = 24; icon-theme = iconName; on-click = "activate"; on-click-middle = "close"; tooltip-format = "{title}"; };
     "hyprland/workspaces" = { format = "{id}"; on-click = "activate"; };
     clock = { format = "{:%H:%M}"; format-alt = "{:%a %d %b %Y}"; tooltip-format = "{:%A, %d %B %Y}"; };
@@ -187,8 +176,13 @@ let
   waybarStyle = pkgs.writeText "waybar-style.css" ''
     * { font-family: "DejaVu Sans", "Symbols Nerd Font", sans-serif; font-size: 13px; min-height: 0; }
     window#waybar { background: #${bg}; color: #${fg}; border-top: 1px solid #${accent}; }
-    #image { padding: 0 8px; }
-    #image.menu { padding: 0 10px 0 12px; }
+    #custom-menu, #custom-snapguard, #custom-firefox, #custom-software, #custom-terminal {
+      min-width: 38px; background-repeat: no-repeat; background-position: center; background-size: 26px 26px; }
+    #custom-menu { background-image: url("${barIcons}/menu.png"); background-size: 28px 28px; margin-left: 6px; }
+    #custom-snapguard { background-image: url("${barIcons}/snapguard.png"); }
+    #custom-firefox { background-image: url("${barIcons}/firefox.png"); }
+    #custom-software { background-image: url("${barIcons}/org.gnome.Software.png"); }
+    #custom-terminal { background-image: url("${barIcons}/kitty.png"); }
     #taskbar { margin-left: 6px; }
     #taskbar button { padding: 0 6px; border-bottom: 3px solid transparent; }
     #taskbar button.active { border-bottom: 3px solid #${accent}; }
@@ -229,7 +223,7 @@ let
     d="''${XDG_CONFIG_HOME:-$HOME/.config}/hypr"
     if [ ! -e "$d/hyprland.conf" ]; then
       mkdir -p "$d"
-      cp /etc/snapos/hypr/hyprland.conf /etc/snapos/hypr/hyprpaper.conf /etc/snapos/hypr/hyprlock.conf "$d/"
+      cp /etc/snapos/hypr/hyprland.conf /etc/snapos/hypr/hyprlock.conf "$d/"
       chmod u+w "$d"/*.conf
     fi
     # start-hyprland sets the session up the way Hyprland expects (0.50+)
@@ -489,7 +483,6 @@ in {
 
     (mkIf (desk == "hyprland") {
       environment.etc."snapos/hypr/hyprland.conf".source = hyprlandConf;
-      environment.etc."snapos/hypr/hyprpaper.conf".source = hyprpaperConf;
       environment.etc."snapos/hypr/hyprlock.conf".source = hyprlockConf;
       environment.etc."xdg/waybar/config".source = waybarConfig;
       environment.etc."xdg/waybar/style.css".source = waybarStyle;
@@ -499,7 +492,7 @@ in {
       services.displayManager.sessionPackages = [ hyprlandSessionPackage ];
       fonts.packages = [ pkgs.nerd-fonts.symbols-only ];
       environment.systemPackages = with pkgs; [
-        waybar wofi mako hyprpaper hyprlock kitty networkmanagerapplet pavucontrol
+        waybar wofi mako swaybg hyprlock kitty networkmanagerapplet pavucontrol
         brightnessctl grim slurp wl-clipboard thunar
       ];
       # Hyprland is Wayland-only; Firefox and GTK programs run natively on it.
