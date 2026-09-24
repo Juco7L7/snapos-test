@@ -339,6 +339,12 @@ in {
         xfce = "xfce";
         hyprland = "snapos-hyprland";
       }.${desk};
+      # lightdm itself must know the session too: for a Wayland session NixOS
+      # only records it in AccountsService, which the greeter does not read,
+      # and the login then fails with "Can't find session 'default'"
+      services.xserver.displayManager.lightdm.extraSeatDefaults = ''
+        user-session = ${config.services.displayManager.defaultSession}
+      '';
     }
 
     (mkIf (desk == "budgie") {
