@@ -141,6 +141,10 @@ EN[disk_prompt]="Disk (for example sda or nvme0n1): "
 PT[disk_prompt]="Disco (ex: sda ou nvme0n1): "
 EN[disk_missing]="Disk not found: @1"
 PT[disk_missing]="Disco nao encontrado: @1"
+EN[bad_user]="Use lower-case letters, digits, - and _ (2 to 32 characters, starting with a letter)."
+PT[bad_user]="Use letras minusculas, digitos, - e _ (2 a 32 caracteres, comecando com letra)."
+EN[bad_host]="Use letters, digits and - (up to 63 characters)."
+PT[bad_host]="Use letras, digitos e - (ate 63 caracteres)."
 EN[user]="User name"
 PT[user]="Nome de usuario"
 EN[pass]="Password for @1"
@@ -267,6 +271,9 @@ say() { printf '  %s\n' "$*"; }
 opt() { printf '    %s%s%s  %s\n' "$BLD" "$1" "$RST" "$2"; }
 ok() { printf '  %s✓%s %s\n' "$GRN" "$RST" "$*"; }
 warn() { printf '  %s%s%s\n' "$YEL" "$*" "$RST"; }
+# Typed values land inside Nix files: only the characters a keymap, locale or
+# time zone name can hold are kept.
+clean_id() { printf '%s' "$1" | tr -cd 'A-Za-z0-9_./@+:-'; }
 caret() { printf '\n  %s›%s ' "$ACC" "$RST"; }
 
 die() {
@@ -602,15 +609,15 @@ fi
 
 step 2 s_kb
 pick_from_list kb_title "localectl list-keymaps" "${KB_LIST[@]}"
-KEYMAP="$ANSWER"
+KEYMAP="$(clean_id "$ANSWER")"
 
 step 3 s_loc
 pick_from_list loc_title "localectl list-locales" "${LOC_LIST[@]}"
-LOCALE="$ANSWER"
+LOCALE="$(clean_id "$ANSWER")"
 
 step 4 s_tz
 pick_from_list tz_title "timedatectl list-timezones" "${TZ_LIST[@]}"
-TIMEZONE="$ANSWER"
+TIMEZONE="$(clean_id "$ANSWER")"
 
 step 5 s_disk
 header
@@ -625,10 +632,18 @@ TARGET="/dev/$DISKNAME"
 step 6 s_acct
 header
 ask "$(t user)" "snap"; USERNAME="$ANSWER"
+until [[ "$USERNAME" =~ ^[a-z_][a-z0-9_-]{1,31}$ ]]; do
+    warn "$(t bad_user)"
+    ask "$(t user)" "snap"; USERNAME="$ANSWER"
+done
 printf '\n'
 askpass "$(t pass "$USERNAME")"
 printf '\n'
 ask "$(t host)" "snapos"; HOSTNAME="$ANSWER"
+until [[ "$HOSTNAME" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,62})$ ]]; do
+    warn "$(t bad_host)"
+    ask "$(t host)" "snapos"; HOSTNAME="$ANSWER"
+done
 
 step 7 s_desk
 choose_desktop
