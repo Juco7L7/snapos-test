@@ -101,7 +101,7 @@ The installer asks which desktop you want:
 | **Budgie** (default) | simple and light; the SnapOS dock with the defender, browser, store and terminal |
 | **KDE Plasma** | full-featured and highly configurable; Breeze with the SnapOS red accent and the same programs pinned to the panel |
 | **Xfce** | classic and very light; the SnapOS theme, a bottom panel with the same programs and no desktop icons |
-| **Hyprland** | tiling, keyboard-driven, Wayland only, for people who like that: Super+Enter terminal, Super+D launcher, Super+Q close, Super+1..9 workspaces, Print screenshot; a bottom bar with the SnapOS programs, notifications and the wallpaper come set up, and SnapOS windows float |
+| **Hyprland** | tiling, keyboard-driven, Wayland only, for people who like that: Super+Enter terminal, Super+D launcher, Super+Q close, Super+1..9 workspaces, Print screenshot; a bottom bar with the SnapOS programs, title bars with close, maximize and minimize (Super+H shows the minimized ones), notifications and the wallpaper come set up, and SnapOS windows float |
 
 All four get the red Papirus icons, the SnapOS wallpaper, the dark or light
 appearance, the same login screen, SnapGuard, SnapHelper and the updater. To

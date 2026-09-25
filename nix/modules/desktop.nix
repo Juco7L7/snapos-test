@@ -40,8 +40,31 @@ let
   hyprlandConf = pkgs.writeText "hyprland.conf" ''
     # SnapOS Hyprland. Super is the main key: Super+Enter terminal, Super+D
     # launcher, Super+Q close, Super+E files, Super+1..9 workspaces,
-    # Super+Shift+1..9 move a window there, Super+L lock, Print screenshot.
+    # Super+Shift+1..9 move a window there, Super+H the minimized windows,
+    # Super+L lock, Print screenshot.
     monitor = , preferred, auto, 1
+
+    # title bars with close, maximize and minimize buttons (hyprbars)
+    plugin = ${pkgs.hyprlandPlugins.hyprbars}/lib/libhyprbars.so
+    plugin {
+        hyprbars {
+            bar_height = 30
+            bar_color = rgb(${bg})
+            col.text = rgb(${fg})
+            bar_text_font = Cantarell
+            bar_text_size = 11
+            bar_text_weight = bold
+            bar_part_of_window = true
+            bar_precedence_over_border = true
+            bar_padding = 10
+            bar_button_padding = 8
+            # buttons, right to left: close, maximize, minimize (Super+H brings it back)
+            hyprbars-button = rgb(${accent}), 14, ✕, hyprctl dispatch killactive, rgb(ffffff)
+            hyprbars-button = rgb(${dim}), 14, □, hyprctl dispatch fullscreen 1, rgb(${fg})
+            hyprbars-button = rgb(${dim}), 14, –, hyprctl dispatch movetoworkspacesilent special:min, rgb(${fg})
+            on_double_click = hyprctl dispatch fullscreen 1
+        }
+    }
 
     exec-once = waybar
     exec-once = mako
@@ -52,6 +75,8 @@ let
     exec-once = snaphelper --first-run
 
     env = XCURSOR_SIZE, 24
+    env = XCURSOR_THEME, Adwaita
+    exec-once = hyprctl setcursor Adwaita 24
     env = GTK_THEME, ${gtkTheme}
 
     input {
@@ -103,6 +128,7 @@ let
     bind = $mod, F, fullscreen,
     bind = $mod, V, togglefloating,
     bind = $mod, L, exec, hyprlock
+    bind = $mod, H, togglespecialworkspace, min
     bind = $mod SHIFT, E, exit,
     bind = , Print, exec, grim -g "$(slurp)" - | wl-copy
     bind = $mod, left, movefocus, l
@@ -167,7 +193,10 @@ let
     # (waybar's taskbar module blocks the bar on Hyprland; the title of the
     # focused window takes its place)
     "hyprland/window" = { format = "{title}"; max-length = 60; separate-outputs = true; };
-    "hyprland/workspaces" = { format = "{id}"; on-click = "activate"; };
+    "hyprland/workspaces" = {
+      format = "{icon}"; on-click = "activate"; show-special = true;
+      format-icons = { "1" = "1"; "2" = "2"; "3" = "3"; "4" = "4"; "5" = "5"; "6" = "6"; "7" = "7"; "8" = "8"; "9" = "9"; special = "▾"; default = "•"; };
+    };
     clock = { format = "{:%H:%M}"; format-alt = "{:%a %d %b %Y}"; tooltip-format = "{:%A, %d %B %Y}"; };
     network = { format-wifi = "  {essid}"; format-ethernet = "  wired"; format-disconnected = "  offline"; on-click = "nm-connection-editor"; };
     pulseaudio = { format = "  {volume}%"; format-muted = "  muted"; on-click = "pavucontrol"; };
@@ -517,10 +546,10 @@ in {
       environment.etc."xdg/wofi/style.css".source = wofiStyle;
       environment.etc."xdg/mako/config".source = makoConfig;
       services.displayManager.sessionPackages = [ hyprlandSessionPackage ];
-      fonts.packages = [ pkgs.nerd-fonts.symbols-only ];
+      fonts.packages = [ pkgs.nerd-fonts.symbols-only pkgs.cantarell-fonts ];
       environment.systemPackages = with pkgs; [
         waybar wofi mako swaybg hyprlock kitty networkmanagerapplet pavucontrol
-        brightnessctl grim slurp wl-clipboard thunar
+        brightnessctl grim slurp wl-clipboard thunar adwaita-icon-theme
       ];
       # Hyprland is Wayland-only; Firefox and GTK programs run natively on it.
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
