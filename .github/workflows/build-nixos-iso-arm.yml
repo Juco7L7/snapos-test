@@ -83,7 +83,8 @@ jobs:
           echo "== installing (unattended)"
           nix --extra-experimental-features 'nix-command flakes' shell --inputs-from . nixpkgs#qemu --command \
             qemu-system-aarch64 -M virt -accel tcg -cpu cortex-a72 -smp 4 -m 3072 -bios "$fw" \
-              -drive file=disk.qcow2,if=virtio -cdrom result/iso/*.iso -drive file=answers.iso,media=cdrom,readonly=on \
+              -drive file=disk.qcow2,if=virtio -cdrom result/iso/*.iso \
+              -device qemu-xhci -drive file=answers.iso,if=none,id=answers,format=raw,readonly=on -device usb-storage,drive=answers \
               -boot d -nic user,model=virtio -display none -serial file:install.log -monitor none -no-reboot &
           qemu=$!
           for i in $(seq 1 540); do
