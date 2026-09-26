@@ -44,6 +44,38 @@ jobs:
           nix --extra-experimental-features 'nix-command flakes' build .#iso -L
           ls -lh result/iso/*.iso
 
+      # The image is booted by UEFI in QEMU on the runner itself, until the
+      # installer prints its first screen on the serial console.
+      - name: Boot the image in QEMU (UEFI)
+        run: |
+          nix --extra-experimental-features 'nix-command flakes' build --inputs-from . nixpkgs#OVMF.fd -o ovmf
+          fw=$(ls ovmf/FV/QEMU_EFI.fd ovmf/FV/AAVMF_CODE.fd 2>/dev/null | head -1)
+          echo "firmware: $fw"
+          accel=tcg; cpu=cortex-a72
+          if [ -w /dev/kvm ]; then accel=kvm; cpu=host; fi
+          echo "accelerator: $accel"
+          nix --extra-experimental-features 'nix-command flakes' shell --inputs-from . nixpkgs#qemu --command \
+            qemu-system-aarch64 -M virt -accel "$accel" -cpu "$cpu" -smp 4 -m 3072 \
+              -bios "$fw" -cdrom result/iso/*.iso -boot d -display none -serial file:boot.log -monitor none &
+          qemu=$!
+          for i in $(seq 1 150); do
+            sleep 10
+            if grep -aqE 'Install in eleven steps|Instale em onze passos' boot.log; then echo "the installer is up after $((i*10)) s"; break; fi
+            if ! kill -0 $qemu 2>/dev/null; then echo "QEMU exited"; break; fi
+          done
+          kill $qemu 2>/dev/null || true
+          echo "--- last lines of the serial console ---"
+          tail -c 4000 boot.log | tr -cd '[:print:]\n' | tail -40
+          grep -aqE 'Install in eleven steps|Instale em onze passos' boot.log
+
+      - name: Keep the boot log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-boot-log-run${{ github.run_number }}
+          path: boot.log
+          if-no-files-found: ignore
+
       - name: Which build is this? (job summary)
         run: |
           {

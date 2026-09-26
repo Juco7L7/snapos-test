@@ -76,6 +76,10 @@
     (pkgs.colloid-gtk-theme.override { themeVariants = [ "red" ]; colorVariants = [ "light" "dark" ]; })
   ];
 
+  # ARM64 computers and VMs often have only a serial console: the boot and
+  # the installer show up there too (tty0 stays the main console).
+  boot.kernelParams = lib.optionals pkgs.stdenv.hostPlatform.isAarch64 [ "console=ttyAMA0,115200" "console=tty0" ];
+
   isoImage.isoName = lib.mkForce (if pkgs.stdenv.hostPlatform.isAarch64 then "snapos-installer-aarch64.iso" else "snapos-installer.iso");
   isoImage.volumeID = lib.mkForce "SNAPOS_INSTALL";
   isoImage.appendToMenuLabel = " SnapOS Installer";
