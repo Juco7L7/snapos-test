@@ -9,7 +9,7 @@ on:
         default: ""
   push:
     branches: [ main ]
-    paths: [ "VERSION", "flake.nix", "flake.lock", "configuration.nix", "nix/**", "src/**", "Makefile", "branding/**", "tests/**" ]
+    paths: [ "VERSION", "flake.nix", "flake.lock", "configuration.nix", "nix/**", "src/**", "Makefile", "branding/**", "tests/**", ".github/workflows/build-nixos-iso-arm.yml" ]
 
 permissions:
   contents: write
