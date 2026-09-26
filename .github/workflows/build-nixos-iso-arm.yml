@@ -60,13 +60,13 @@ jobs:
           qemu=$!
           for i in $(seq 1 150); do
             sleep 10
-            if grep -aqE 'Install in eleven steps|Instale em onze passos' boot.log; then echo "the installer is up after $((i*10)) s"; break; fi
+            if grep -aqE 'Installer.*build' boot.log && grep -aq 'English' boot.log; then echo "the installer is up after $((i*10)) s"; break; fi
             if ! kill -0 $qemu 2>/dev/null; then echo "QEMU exited"; break; fi
           done
           kill $qemu 2>/dev/null || true
           echo "--- last lines of the serial console ---"
           tail -c 4000 boot.log | tr -cd '[:print:]\n' | tail -40
-          grep -aqE 'Install in eleven steps|Instale em onze passos' boot.log
+          grep -aqE 'Installer.*build' boot.log && grep -aq 'English' boot.log
 
       - name: Keep the boot log
         if: always()
