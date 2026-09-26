@@ -478,7 +478,7 @@ check "snapupdate is built with SnapHelper" bash -c "grep -q 'bin/snapupdate' '$
 check "snapupdate is in the menu" grep -q '^Exec=snapupdate$' "$ROOT/branding/snapupdate.desktop"
 
 section "version"
-check "the repository has a VERSION file" bash -c "grep -qE '^[0-9]+\.[0-9]+$' '$ROOT/VERSION'"
+check "the repository has a VERSION file" bash -c "grep -qE '^[0-9]+(\.[0-9]+)+$' '$ROOT/VERSION'"
 check "os-release names the SnapOS version" bash -c "grep -q 'PRETTY_NAME=\"SnapOS \${snaposVersion}\"' '$ROOT/nix/modules/snapos.nix' && grep -q 'ID_LIKE=nixos' '$ROOT/nix/modules/snapos.nix'"
 
 section "/etc/snapos"
