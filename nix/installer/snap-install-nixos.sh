@@ -274,6 +274,11 @@ warn() { printf '  %s%s%s\n' "$YEL" "$*" "$RST"; }
 # Typed values land inside Nix files: only the characters a keymap, locale or
 # time zone name can hold are kept.
 clean_id() { printf '%s' "$1" | tr -cd 'A-Za-z0-9_./@+:-'; }
+# x86_64 PCs and ARM64 computers get different system attributes; an ARM64
+# computer boots by UEFI only, so GRUB goes to the EFI partition alone.
+ARCH="$(uname -m)"
+FLAKE_ATTR=snapos
+[ "$ARCH" = aarch64 ] && FLAKE_ATTR=snapos-aarch64
 caret() { printf '\n  %s›%s ' "$ACC" "$RST"; }
 
 die() {
@@ -408,7 +413,7 @@ update_system() {
     keep_network
     say "$(t u_bak)"
     printf '\n  %s%s%s\n\n' "$BLD" "$(t i_run)" "$RST"
-    LC_ALL=C.UTF-8 nixos-install --root /mnt --flake "path:/mnt/etc/snapos#snapos" --no-root-passwd \
+    LC_ALL=C.UTF-8 nixos-install --root /mnt --flake "path:/mnt/etc/snapos#$FLAKE_ATTR" --no-root-passwd \
         || die "$(t f_install)"
     printf '\n'
     ok "${BLD}$(t done_title)${RST}"
@@ -628,6 +633,8 @@ printf '\n  %s' "$(t disk_prompt)"
 read -r DISKNAME
 TARGET="/dev/$DISKNAME"
 [ -b "$TARGET" ] || die "$(t disk_missing "$TARGET")"
+GRUB_DEVICE="$TARGET"
+[ "$ARCH" = aarch64 ] && GRUB_DEVICE=nodev
 
 step 6 s_acct
 header
@@ -723,7 +730,7 @@ cat > /mnt/etc/snapos/local.nix <<EOF
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
   };
-  boot.loader.grub.device = "${TARGET}";
+  boot.loader.grub.device = "${GRUB_DEVICE}";
   boot.loader.grub.efiSupport = true;
   boot.loader.grub.efiInstallAsRemovable = true;
   boot.loader.efi.canTouchEfiVariables = false;
@@ -733,7 +740,7 @@ write_graphics
 keep_network
 
 printf '\n  %s%s%s\n\n' "$BLD" "$(t i_run)" "$RST"
-LC_ALL=C.UTF-8 nixos-install --root /mnt --flake "path:/mnt/etc/snapos#snapos" --no-root-passwd \
+LC_ALL=C.UTF-8 nixos-install --root /mnt --flake "path:/mnt/etc/snapos#$FLAKE_ATTR" --no-root-passwd \
     || die "$(t f_install)"
 
 say "$(t i_pw "$USERNAME")..."

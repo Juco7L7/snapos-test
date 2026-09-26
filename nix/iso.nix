@@ -71,13 +71,12 @@
   # The red Papirus icons and the red Colloid theme are SnapOS variants, so no
   # public cache has them and the installer would build them on the laptop,
   # which is the slowest part of the install. They ship inside the image.
-  isoImage.storeContents =
-    let p = self.nixosConfigurations.snapos.pkgs; in [
-      (p.papirus-icon-theme.override { color = "red"; })
-      (p.colloid-gtk-theme.override { themeVariants = [ "red" ]; colorVariants = [ "light" "dark" ]; })
-    ];
+  isoImage.storeContents = [
+    (pkgs.papirus-icon-theme.override { color = "red"; })
+    (pkgs.colloid-gtk-theme.override { themeVariants = [ "red" ]; colorVariants = [ "light" "dark" ]; })
+  ];
 
-  isoImage.isoName = lib.mkForce "snapos-installer.iso";
+  isoImage.isoName = lib.mkForce (if pkgs.stdenv.hostPlatform.isAarch64 then "snapos-installer-aarch64.iso" else "snapos-installer.iso");
   isoImage.volumeID = lib.mkForce "SNAPOS_INSTALL";
   isoImage.appendToMenuLabel = " SnapOS Installer";
 
