@@ -103,6 +103,10 @@ image instead of UEFI (most Raspberry Pi setups) are not covered.
 
 ## Desktops
 
+<p align="center">
+  <img src="docs/desktops.gif" alt="The four SnapOS desktops, Budgie, KDE Plasma, Xfce and Hyprland, in the dark look" width="720">
+</p>
+
 The installer asks which desktop you want:
 
 | Desktop | What it is |
