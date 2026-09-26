@@ -48,9 +48,9 @@ jobs:
       # installer prints its first screen on the serial console.
       - name: Boot the image in QEMU (UEFI)
         run: |
-          nix --extra-experimental-features 'nix-command flakes' build --inputs-from . nixpkgs#OVMF.fd -o ovmf
-          fw=$(ls ovmf/FV/QEMU_EFI.fd ovmf/FV/AAVMF_CODE.fd 2>/dev/null | head -1)
-          echo "firmware: $fw"
+          fwdir=$(nix --extra-experimental-features 'nix-command flakes' build --inputs-from . nixpkgs#OVMF.fd --no-link --print-out-paths | head -1)
+          fw="$fwdir/FV/QEMU_EFI.fd"
+          echo "firmware: $fw"; test -s "$fw"
           accel=tcg; cpu=cortex-a72
           if [ -w /dev/kvm ]; then accel=kvm; cpu=host; fi
           echo "accelerator: $accel"
