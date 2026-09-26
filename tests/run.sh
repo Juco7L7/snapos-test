@@ -222,7 +222,8 @@ GUARD
     chmod +x "$TMP/fakeguard/snapguard"
     export SNAPOS_NIX_DIR="$TMP/nixdeb"
     mkdir -p "$SNAPOS_NIX_DIR"
-    sd() { env PATH="$TMP/fakeguard:$PATH" "$D" "$@"; }
+    # the test packages are amd64 whatever computer runs the tests
+    sd() { env SNAPDEB_ARCH="${SNAPDEB_ARCH:-amd64}" PATH="$TMP/fakeguard:$PATH" "$D" "$@"; }
 
     out="$(sd info "$TMP/deb/hello-snap_1.0_amd64.deb" 2>&1)"
     check "info shows the package" bash -c "printf '%s' \"\$1\" | grep -q 'hello-snap'" _ "$out"
