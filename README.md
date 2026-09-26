@@ -101,6 +101,27 @@ It is the same SnapOS: the same installer, desktops, SnapGuard and updater.
 layer installs `arm64` (or `all`) `.deb` files. Boards that need a vendor
 image instead of UEFI (most Raspberry Pi setups) are not covered.
 
+### Installing without questions
+
+A USB stick (or a small image) labelled `SNAPOS_ANSWERS` with a file
+`snapos-answers.env` answers everything, and the installer runs on its own:
+
+```
+LANG=en
+KEYMAP=us
+LOCALE=en_US.UTF-8
+TIMEZONE=UTC
+DISK=sda
+USERNAME=snap
+PASSWORD=change-me
+HOSTNAME=snapos
+DESKTOP=budgie
+LOOK=dark
+GRAPHICS=auto
+```
+
+CI uses this to install SnapOS in a virtual machine and boot the result.
+
 ## Desktops
 
 <p align="center">
