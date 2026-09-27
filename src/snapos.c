@@ -89,7 +89,7 @@ static void usage(FILE *out) {
         "  snapos update check      is there a newer release? (exit 10 when there is)\n"
         "  snapos version           the release this system runs\n"
         "\n"
-        "Coming from Ubuntu or Debian\n"
+        "Coming from a Debian-based distro\n"
         "  apt search X       ->  snapos find X\n"
         "  apt install X      ->  snapos add X\n"
         "  apt remove X       ->  snapos remove X\n"

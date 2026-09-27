@@ -9,12 +9,12 @@
 
 <p align="center">
   <b>The easy road to NixOS.</b><br>
-  Keep the habits you have from Ubuntu. Get a system you can always undo.
+  Keep the habits you have from Debian-based distros. Get a system you can always undo.
 </p>
 
 <p align="center">
   <a href="#install">Install</a> ·
-  <a href="#coming-from-ubuntu">Coming from Ubuntu</a> ·
+  <a href="#coming-from-a-debian-based-distro">Coming from a Debian-based distro</a> ·
   <a href="#every-command">Commands</a> ·
   <a href="#learning-nixos-from-here">Learn NixOS</a>
 </p>
@@ -41,7 +41,7 @@ the NixOS way, so you can cross over at your own pace.
 | --- | --- |
 | **1. Meet SnapOS** | [The idea](#the-idea-you-declare-you-do-not-install) · [What you get](#what-you-get) |
 | **2. Get SnapOS** | [Install](#install) · [Desktops](#desktops) · [Dark or light](#dark-or-light) |
-| **3. Use SnapOS** | [Coming from Ubuntu](#coming-from-ubuntu) · [Installing programs](#installing-programs) · [Changing the system](#changing-the-system) · [Undoing and cleaning](#undoing-and-cleaning) · [Updates](#updates) · [Debian packages](#debian-packages-deb) · [SnapGuard](#snapguard) |
+| **3. Use SnapOS** | [Coming from a Debian-based distro](#coming-from-a-debian-based-distro) · [Installing programs](#installing-programs) · [Changing the system](#changing-the-system) · [Undoing and cleaning](#undoing-and-cleaning) · [Updates](#updates) · [Debian packages](#debian-packages-deb) · [SnapGuard](#snapguard) |
 | **4. Reference** | [Every command](#every-command) · [Learning NixOS from here](#learning-nixos-from-here) · [Build it yourself](#build-it-yourself) · [Repository layout](#repository-layout) |
 
 <br>
@@ -238,7 +238,7 @@ To switch later, change `snapos.appearance` in `/etc/snapos/local.nix` and run
 
 <br>
 
-## Coming from Ubuntu
+## Coming from a Debian-based distro
 
 <p align="center">
   <img src="branding/snappy-commands.gif" alt="Snappy lists the apt commands next to their snapos equivalents" width="640">
