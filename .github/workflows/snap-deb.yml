@@ -145,10 +145,9 @@ jobs:
             ok=""
             for i in $(seq 1 110); do
               sleep 5
-              if xdotool search --name "Sign in to Steam|Steam" >/dev/null 2>&1 && [ -d "$HOME/.local/share/Steam/ubuntu12_32" ]; then
-                if grep -q -i "steamwebhelper\|Running Steam on\|Startup - updater" "$RUNNER_TEMP/steam.log"; then ok=1; fi
-              fi
-              [ -n "$ok" ] && [ "$i" -gt 24 ] && break
+              # Steam has downloaded itself and its own window (the sign-in screen) is up
+              if [ -d "$HOME/.local/share/Steam/ubuntu12_32" ] && xdotool search --name "steamwebhelper" >/dev/null 2>&1; then ok=1; fi
+              [ -n "$ok" ] && sleep 20 && break
             done
             import -window root "$RUNNER_TEMP/steam-shots/steam.png" 2>/dev/null || true
             xdotool search --name "." getwindowname %@ 2>/dev/null | sort -u | head -20
