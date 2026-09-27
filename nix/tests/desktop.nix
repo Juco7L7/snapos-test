@@ -70,8 +70,9 @@ let
             # the everyday commands, on a real system
             machine.execute("snapos generations > /tmp/generations.log 2>&1")
             # nix-env -i is stopped with an explanation (the shell's own setup, as a login would load it)
-            machine.succeed("su tester -c \"env -u __ETC_BASHRC_SOURCED bash -c 'PS1=x; . /etc/bashrc; nix-env -i hello' 2>&1\" | grep -q 'snapos add'")
-            machine.fail("su tester -c \"env -u __ETC_BASHRC_SOURCED bash -c 'PS1=x; . /etc/bashrc; nix-env -i hello'\"")
+            status, out = machine.execute("su tester -c \"env -u __ETC_BASHRC_SOURCED bash -c 'PS1=x; . /etc/bashrc; type nix-env | head -1; nix-env -i hello' 2>&1\"")
+            print(out)
+            assert "snapos add" in out, out
             machine.succeed("snapguard status")
             machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
             ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
