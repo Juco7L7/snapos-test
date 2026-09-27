@@ -1,6 +1,10 @@
 > [!NOTE]
 > **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/Juco7L7/SnapOS), the repository that ships the installer ISO.
 
+<p align="center">
+  <img src="docs/desktop.png" alt="The SnapOS desktop: red Snappy wallpaper, a terminal with fastfetch, and the SnapGuard window" width="720">
+</p>
+
 <h1 align="center">SnapOS</h1>
 
 <p align="center">A bridge from Ubuntu-like systems to NixOS: the power of a declarative system, with plain commands.</p>
@@ -46,6 +50,98 @@ rebuild: it is gone, with nothing left behind. Every rebuild is kept as a
 You do not have to edit the file by hand to start. The `snapos` commands below
 edit it and rebuild for you, and you can open it any time with `snapos config`
 to see what they wrote.
+
+## What you get
+
+- **One file describes the system**, and plain commands edit it for you:
+  `snapos add`, `snapos remove`, `snapos rebuild`.
+- **Every change can be undone**: each rebuild is a generation you can go back
+  to, from the terminal or from the boot menu.
+- **Updates that undo themselves** when the new system does not start.
+- **SnapGuard**, the defender, based on ClamAV, in real time. Threats go to
+  quarantine and nothing is deleted without your approval.
+- **SnapWeb**, the browser: official Firefox with a dark and red look.
+- **Real `.deb` support**: open a `.deb` file and SnapOS scans it, then
+  installs it in a Debian layer with everything it needs.
+- **Software**: GNOME Software with Flatpak and Flathub.
+- **Four desktops**: Budgie (the default), KDE Plasma, Xfce or Hyprland, all
+  with the SnapOS look in dark or light.
+- **A guided installer** in eleven steps, in English or Portuguese, for
+  x86_64 PCs (BIOS and UEFI) and ARM64 computers (UEFI); it can also run
+  without questions.
+- **SnapHelper**, a short tour that opens the first time you log in.
+- **Small C tools** for everything, in [`src/`](src/).
+
+## Install
+
+<p align="center">
+  <img src="branding/snappy-install.gif" alt="Snappy walks through the eleven installer steps" width="640">
+</p>
+
+1. Download the ISO from the Releases page: `snapos-installer.iso` for
+   x86_64 PCs, `snapos-installer-aarch64.iso` for ARM64 computers.
+2. Write it to a USB drive with balenaEtcher.
+3. Boot from the USB drive. The installer starts by itself.
+
+The installer has eleven steps, in English or Portuguese: network, keyboard,
+language, time zone, disk, account, desktop, look (dark or light), graphics, a
+review, and the installation. The Wi-Fi network you choose is kept, so the
+installed system connects by itself.
+
+If SnapOS is already installed, the installer offers **Update SnapOS (keeps
+your files)**.
+
+**ARM64.** The ARM64 image is for computers that boot by UEFI (ARM laptops,
+mini PCs and boards with a UEFI firmware). It is the same SnapOS. Boards that
+need a vendor image instead of UEFI (most Raspberry Pi setups) are not covered.
+
+**Installing without questions.** A USB stick (or a small image) labelled
+`SNAPOS_ANSWERS` with a file `snapos-answers.env` answers everything, and the
+installer runs on its own:
+
+```
+LANG=en
+KEYMAP=us
+LOCALE=en_US.UTF-8
+TIMEZONE=UTC
+DISK=sda
+USERNAME=snap
+PASSWORD=change-me
+HOSTNAME=snapos
+DESKTOP=budgie
+LOOK=dark
+GRAPHICS=auto
+```
+
+## Desktops
+
+<p align="center">
+  <img src="docs/desktops.gif" alt="The four SnapOS desktops, Budgie, KDE Plasma, Xfce and Hyprland, in the dark look" width="720">
+</p>
+
+The installer asks which desktop you want:
+
+| Desktop | What it is |
+| --- | --- |
+| **Budgie** (default) | simple and light; a dock with the defender, browser, store and terminal |
+| **KDE Plasma** | full-featured and highly configurable; the same programs pinned to the panel |
+| **Xfce** | classic and very light; a bottom panel with the same programs |
+| **Hyprland** | tiling and keyboard-driven, Wayland only: Super+Enter terminal, Super+D launcher, Super+Q close, Super+1..9 workspaces, Super+H minimized windows; a bottom bar and title bars with close, maximize and minimize come set up |
+
+All four get the red icons, the SnapOS wallpaper, the same login screen,
+SnapGuard, SnapHelper and the updater. To switch later, change
+`snapos.desktop` in `/etc/snapos/local.nix` and run `snapos rebuild`.
+
+## Dark or light
+
+<p align="center">
+  <img src="branding/snappy-appearance.gif" alt="Snappy next to a SnapOS desktop that switches between dark and light" width="640">
+</p>
+
+The installer asks whether you want a dark or a light desktop. The theme,
+icons, wallpaper, login screen, the SnapGuard shield and SnapWeb all follow it.
+To switch later, change `snapos.appearance` in `/etc/snapos/local.nix` and run
+`snapos rebuild`.
 
 ## Coming from Ubuntu
 
@@ -246,77 +342,6 @@ snapguard restore NAME          # or: delete NAME, trust PATH
 
 The virus database downloads on the first boot with internet. See
 [docs/SECURITY.md](docs/SECURITY.md) for the design.
-
-## Install
-
-<p align="center">
-  <img src="branding/snappy-install.gif" alt="Snappy walks through the eleven installer steps" width="640">
-</p>
-
-1. Download the ISO from the Releases page: `snapos-installer.iso` for
-   x86_64 PCs, `snapos-installer-aarch64.iso` for ARM64 computers.
-2. Write it to a USB drive with balenaEtcher.
-3. Boot from the USB drive. The installer starts by itself.
-
-The installer has eleven steps, in English or Portuguese: network, keyboard,
-language, time zone, disk, account, desktop, look (dark or light), graphics, a
-review, and the installation. The Wi-Fi network you choose is kept, so the
-installed system connects by itself.
-
-If SnapOS is already installed, the installer offers **Update SnapOS (keeps
-your files)**.
-
-**ARM64.** The ARM64 image is for computers that boot by UEFI (ARM laptops,
-mini PCs and boards with a UEFI firmware). It is the same SnapOS. Boards that
-need a vendor image instead of UEFI (most Raspberry Pi setups) are not covered.
-
-**Installing without questions.** A USB stick (or a small image) labelled
-`SNAPOS_ANSWERS` with a file `snapos-answers.env` answers everything, and the
-installer runs on its own:
-
-```
-LANG=en
-KEYMAP=us
-LOCALE=en_US.UTF-8
-TIMEZONE=UTC
-DISK=sda
-USERNAME=snap
-PASSWORD=change-me
-HOSTNAME=snapos
-DESKTOP=budgie
-LOOK=dark
-GRAPHICS=auto
-```
-
-## Desktops
-
-<p align="center">
-  <img src="docs/desktops.gif" alt="The four SnapOS desktops, Budgie, KDE Plasma, Xfce and Hyprland, in the dark look" width="720">
-</p>
-
-The installer asks which desktop you want:
-
-| Desktop | What it is |
-| --- | --- |
-| **Budgie** (default) | simple and light; a dock with the defender, browser, store and terminal |
-| **KDE Plasma** | full-featured and highly configurable; the same programs pinned to the panel |
-| **Xfce** | classic and very light; a bottom panel with the same programs |
-| **Hyprland** | tiling and keyboard-driven, Wayland only: Super+Enter terminal, Super+D launcher, Super+Q close, Super+1..9 workspaces, Super+H minimized windows; a bottom bar and title bars with close, maximize and minimize come set up |
-
-All four get the red icons, the SnapOS wallpaper, the same login screen,
-SnapGuard, SnapHelper and the updater. To switch later, change
-`snapos.desktop` in `/etc/snapos/local.nix` and run `snapos rebuild`.
-
-## Dark or light
-
-<p align="center">
-  <img src="branding/snappy-appearance.gif" alt="Snappy next to a SnapOS desktop that switches between dark and light" width="640">
-</p>
-
-The installer asks whether you want a dark or a light desktop. The theme,
-icons, wallpaper, login screen, the SnapGuard shield and SnapWeb all follow it.
-To switch later, change `snapos.appearance` in `/etc/snapos/local.nix` and run
-`snapos rebuild`.
 
 ## Every command
 
