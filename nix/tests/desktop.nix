@@ -66,7 +66,12 @@ let
             machine.succeed("grep -q ${appearance} /etc/snapos/appearance")
             machine.succeed("test -f /etc/xdg/autostart/snaphelper.desktop")
             machine.succeed("test -s /run/current-system/sw/share/snapos/helper/snappy-declares.gif")
-            machine.succeed("snapos help")
+            machine.succeed("snapos help | grep -q 'snapos add'")
+            # the everyday commands, on a real system
+            machine.execute("snapos generations > /tmp/generations.log 2>&1")
+            machine.succeed("snapos gc 2>&1 | grep -q 'MB free'")
+            machine.succeed("su tester -c \"bash -ic 'nix-env -i hello' 2>&1\" | grep -q 'snapos add'")
+            machine.fail("su tester -c \"bash -ic 'nix-env -i hello'\"")
             machine.succeed("snapguard status")
             machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
             ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
