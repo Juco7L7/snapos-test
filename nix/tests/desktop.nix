@@ -82,7 +82,7 @@ let
             assert "state available" in out, out
             machine.succeed("su tester -c 'test -r /var/lib/snapos/update && test -x /var/lib/snapos/update'")
             machine.fail("su tester -c 'ls /var/lib/snapos/update/work'")
-            ${if name == "desktop" || name == "xfce" then "machine.execute(\"su tester -c 'DISPLAY=:0 XAUTHORITY=$HOME/.Xauthority SNAPUPDATE_ONCE=1 SNAPOS_UPDATE_WEB=file:///tmp/web SNAPOS_UPDATE_API=file:///tmp/noapi setsid snapupdate --autostart >/tmp/snapupdate.log 2>&1 &'\"); machine.sleep(20); machine.succeed(\"pgrep -u tester -f [s]napupdate-wrapped\"); machine.screenshot(\"03-update\"); machine.execute(\"pkill -u tester -f snapupdate-wrapped\")" else ""}
+            ${if name == "desktop" || name == "xfce" then "machine.execute(\"su tester -c 'DISPLAY=:0 XAUTHORITY=$HOME/.Xauthority SNAPUPDATE_ONCE=1 SNAPOS_UPDATE_WEB=file:///tmp/web SNAPOS_UPDATE_API=file:///tmp/noapi setsid snapupdate --autostart >/tmp/snapupdate.log 2>&1 &'\"); machine.sleep(20); machine.succeed(\"pgrep -u tester -f [s]napupdate.--autostart\"); machine.screenshot(\"03-update\"); machine.execute(\"pkill -u tester -f [s]napupdate.--autostart\")" else ""}
             machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
             ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
             machine.screenshot("09-final")
