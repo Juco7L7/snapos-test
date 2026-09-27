@@ -1,6 +1,3 @@
-> [!NOTE]
-> **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/Juco7L7/SnapOS), the repository that ships the installer ISO.
-
 <p align="center">
   <img src="docs/desktop.png" alt="The SnapOS desktop: red Snappy wallpaper, a terminal with fastfetch, and the SnapGuard window" width="720">
 </p>
@@ -18,6 +15,25 @@
   <a href="#every-command">Commands</a> ·
   <a href="#learning-nixos-from-here">Learn NixOS</a>
 </p>
+
+<br>
+
+<a name="before-you-install"></a>
+
+> [!NOTE]
+> **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/Juco7L7/SnapOS), the repository that ships the installer ISO.
+
+> [!CAUTION]
+> **Flash with balenaEtcher.** Do not copy the file onto the drive by hand, and
+> do not use "ISO mode" tools (in Rufus, choose *DD Image mode*). If the boot
+> stops with `unable to read id index table`, the download or the USB drive is
+> damaged: compare the SHA-256 of the file with the one on the release page,
+> then download and flash again.
+
+> [!WARNING]
+> **Do not use versions before V2.0** (V1 and V1.1). Their base stopped
+> receiving security fixes on 30 June 2025. V2.0 and later run NixOS 26.05 with
+> Linux 6.18 and update themselves.
 
 <br>
 
@@ -125,17 +141,7 @@ connects by itself.
 Already on SnapOS? Boot the installer and pick **Update SnapOS (keeps your
 files)**.
 
-> [!CAUTION]
-> **Flash with balenaEtcher.** Do not copy the file onto the drive by hand, and
-> do not use "ISO mode" tools (in Rufus, choose *DD Image mode*). If the boot
-> stops with `unable to read id index table`, the download or the USB drive is
-> damaged: compare the SHA-256 of the file with the one on the release page,
-> then download and flash again.
-
-> [!WARNING]
-> **Do not use versions before V2.0** (V1 and V1.1). Their base stopped
-> receiving security fixes on 30 June 2025. V2.0 and later run NixOS 26.05 with
-> Linux 6.18 and update themselves.
+Flash the image with balenaEtcher and read the [warnings at the top](#before-you-install) first.
 
 <details>
 <summary><b>ARM64 computers</b></summary>
