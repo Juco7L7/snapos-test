@@ -69,9 +69,9 @@ let
             machine.succeed("snapos help | grep -q 'snapos add'")
             # the everyday commands, on a real system
             machine.execute("snapos generations > /tmp/generations.log 2>&1")
-            machine.succeed("snapos gc 2>&1 | grep -q 'MB free'")
-            machine.succeed("su tester -c \"bash -ic 'nix-env -i hello' 2>&1\" | grep -q 'snapos add'")
-            machine.fail("su tester -c \"bash -ic 'nix-env -i hello'\"")
+            # nix-env -i is stopped with an explanation (the shell's own setup, as a login would load it)
+            machine.succeed("su tester -c \"env -u __ETC_BASHRC_SOURCED PS1=x bash -c '. /etc/bashrc; nix-env -i hello' 2>&1\" | grep -q 'snapos add'")
+            machine.fail("su tester -c \"env -u __ETC_BASHRC_SOURCED PS1=x bash -c '. /etc/bashrc; nix-env -i hello'\"")
             machine.succeed("snapguard status")
             machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
             ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
@@ -166,6 +166,7 @@ let
     processes = [ "'labwc|budgie-wm'" "'budgie-panel|budgie-desktop'" ];
     extra = ''
       machine.succeed("${gsettings} org.gnome.desktop.peripherals.touchpad disable-while-typing | grep -q false")
+      ${if appearance == "dark" then "machine.succeed(\"snapos gc 2>&1 | grep -q 'MB free'\")" else ""}
       machine.succeed("${gsettings} org.gnome.desktop.interface gtk-theme | grep -q ${if appearance == "light" then "SnapOS-Light" else "Colloid-Red-Dark"}")
       machine.succeed("${gsettings} org.gnome.desktop.interface color-scheme | grep -q ${if appearance == "light" then "prefer-light" else "prefer-dark"}")
     '';
