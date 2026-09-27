@@ -158,7 +158,7 @@ There is no `apt` on SnapOS. The same habits have these names:
 | `apt remove vlc` | `snapos remove vlc` | takes it out of the declaration and rebuilds |
 | `apt list --installed` | `snapos list` | the programs this system declares |
 | `apt autoremove`, `apt clean` | `snapos gc` | frees disk space |
-| `apt upgrade` | `snapos update` | installs the latest SnapOS release |
+| `apt upgrade` | `snapos update` | installs the latest SnapOS release and newer packages |
 | installing something just to try it | `snapos shell vlc` | uses it without installing |
 | a `.deb` file | `snap-deb FILE.deb` | scans it and installs it in the Debian layer |
 
@@ -274,6 +274,21 @@ moment a normal user logs in. If it never reaches the login screen, or nobody
 manages to log in within ten minutes, SnapOS goes back to the previous
 generation by itself on the next start and tells you at login.
 
+**The desktop and the programs update too.** Between SnapOS releases the same
+check looks for newer packages on the NixOS branch SnapOS is built from: the
+desktop you chose (Budgie, Plasma, Xfce or Hyprland), the browser, the kernel
+and everything else, with their security fixes. When the packages here are
+more than a week old and newer ones exist, the login window offers **Package
+updates**; `snapos update` installs them the same safe way, for the next start
+and with the automatic way back. A later SnapOS release never brings older
+packages than the ones you already have.
+
+**One release for every computer.** An update does not download an image: it
+downloads the release's source and builds the system for the computer it runs
+on, so an x86_64 PC and an ARM64 computer update from the same release. On
+ARM64 the system calls itself `SnapOS 2.4 ARM` (in `snapos version`,
+`fastfetch` and `/etc/os-release`).
+
 The check compares the version that is running with the latest release and
 does not need the GitHub API. When GitHub cannot be reached the window says so
 instead of claiming the system is up to date. `snapos update check` only asks;
@@ -357,7 +372,7 @@ The virus database downloads on the first boot with internet. See
 | `snapos rollback` / `generations` | go back, or list what you can go back to |
 | `snapos gc` | free disk space (`--all` keeps only the current system) |
 | `snapos log` | the output of the last rebuild |
-| `snapos update` / `update check` / `version` | SnapOS releases |
+| `snapos update` / `update check` / `version` | SnapOS releases and package updates |
 | `snapos doctor` | check graphics, boot, network and antivirus problems |
 | `snap-deb FILE.deb` | scan a `.deb`, then add it (also what double-clicking one does) |
 | `snap-deb list` / `remove NAME` / `run CMD` / `shell` / `status` | the Debian layer |
